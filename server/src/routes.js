@@ -102,7 +102,9 @@ async function routes(fastify) {
   // 导出站点（必须在 /api/sites/:id 之前）
   fastify.get('/api/sites/export', async (request, reply) => {
     try {
+      const currentUserId = request.user.sub;
       const sites = await prisma.site.findMany({
+        where: { ownerId: currentUserId },
         orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
         include: { category: true }
       });
@@ -110,7 +112,7 @@ async function routes(fastify) {
       // 不导出加密的敏感信息，导出原始apiKey和billingAuthValue
       const { decrypt } = require('./crypto');
       const exportData = sites.map(site => {
-        const { apiKeyEnc, billingAuthValue, ...siteData } = site;
+        const { apiKeyEnc, billingAuthValue, ownerId, ...siteData } = site;
         return {
           ...siteData,
           apiKey: apiKeyEnc ? decrypt(apiKeyEnc) : null,
@@ -663,6 +665,7 @@ async function routes(fastify) {
     }
   }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
     const tokenData = request.body;
     const { decrypt } = require('./crypto');
     
@@ -671,6 +674,12 @@ async function routes(fastify) {
       if (!site) {
         reply.code(404);
         return { error: '站点不存在' };
+      }
+      
+      // 验证站点所有权
+      if (site.ownerId !== currentUserId) {
+        reply.code(403);
+        return { error: '无权限操作此站点' };
       }
       
       const token = site.apiKeyEnc ? decrypt(site.apiKeyEnc) : null;
@@ -722,6 +731,7 @@ async function routes(fastify) {
     }
   }, async (request, reply) => {
     const { id, tokenId } = request.params;
+    const currentUserId = request.user.sub;
     const { decrypt } = require('./crypto');
     
     try {
@@ -729,6 +739,12 @@ async function routes(fastify) {
       if (!site) {
         reply.code(404);
         return { error: '站点不存在' };
+      }
+      
+      // 验证站点所有权
+      if (site.ownerId !== currentUserId) {
+        reply.code(403);
+        return { error: '无权限操作此站点' };
       }
       
       const token = site.apiKeyEnc ? decrypt(site.apiKeyEnc) : null;
@@ -780,6 +796,7 @@ async function routes(fastify) {
     }
   }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
     const { key } = request.body;
     const { decrypt } = require('./crypto');
     
@@ -788,6 +805,12 @@ async function routes(fastify) {
       if (!site) {
         reply.code(404);
         return { error: '站点不存在' };
+      }
+      
+      // 验证站点所有权
+      if (site.ownerId !== currentUserId) {
+        reply.code(403);
+        return { error: '无权限操作此站点' };
       }
       
       const token = site.apiKeyEnc ? decrypt(site.apiKeyEnc) : null;
