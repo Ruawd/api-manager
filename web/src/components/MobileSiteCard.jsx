@@ -98,35 +98,32 @@ export default function MobileSiteCard({
     <Card
       hoverable
       style={{
-        borderRadius: isMobile ? 14 : 16,
-        marginBottom: isMobile ? 12 : 16,
+        borderRadius: isMobile ? 12 : 14,
+        marginBottom: 0,
         boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
         border: '1px solid rgba(0,0,0,0.06)',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        height: '100%'
       }}
-      bodyStyle={{ padding: isMobile ? 14 : 18 }}
+      bodyStyle={{ padding: isMobile ? 12 : 14 }}
     >
-      {/* 头部：名称和状态 */}
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-          <div style={{ flex: 1 }}>
-            <Space size={4} wrap>
-              <Typography.Text strong style={{ fontSize: isMobile ? 15 : 16 }}>
-                {site.name}
-              </Typography.Text>
-              {site.pinned && <PushpinFilled style={{ color: '#fa8c16', fontSize: 12 }} />}
-            </Space>
-          </div>
-        </div>
+      {/* 头部：名称 */}
+      <div style={{ marginBottom: 10 }}>
+        <Space size={4} wrap style={{ marginBottom: 6 }}>
+          <Typography.Text strong style={{ fontSize: isMobile ? 14 : 15 }}>
+            {site.name}
+          </Typography.Text>
+          {site.pinned && <PushpinFilled style={{ color: '#fa8c16', fontSize: 11 }} />}
+        </Space>
 
         {/* URL */}
         <Typography.Link 
           href={site.baseUrl} 
           target="_blank"
           ellipsis
-          style={{ fontSize: 12, color: '#666', display: 'block', marginBottom: 8 }}
+          style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 8 }}
         >
-          <GlobalOutlined style={{ marginRight: 4 }} />
+          <GlobalOutlined style={{ marginRight: 4, fontSize: 10 }} />
           {site.baseUrl}
         </Typography.Link>
         
@@ -136,21 +133,26 @@ export default function MobileSiteCard({
             background: billingStatus.type === 'danger' ? '#fff2f0' :
                         billingStatus.type === 'warning' ? '#fff7e6' : '#f6ffed',
             border: `1px solid ${billingStatus.color}`,
-            borderRadius: 8,
-            padding: 8,
-            fontSize: 11
+            borderRadius: 6,
+            padding: '6px 8px',
+            fontSize: 10
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ color: '#666' }}>总额：</span>
-              <span style={{ fontWeight: 600 }}>${billingStatus.detail.total}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
+              <span style={{ color: '#888', fontSize: 10 }}>总额</span>
+              <span style={{ fontWeight: 600, fontSize: 11 }}>${billingStatus.detail.total}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ color: '#666' }}>已用：</span>
-              <span style={{ fontWeight: 600 }}>${billingStatus.detail.used}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
+              <span style={{ color: '#888', fontSize: 10 }}>已用</span>
+              <span style={{ fontWeight: 600, fontSize: 11 }}>
+                ${billingStatus.detail.used} 
+                <span style={{ color: billingStatus.color, marginLeft: 4 }}>
+                  ({billingStatus.detail.percentage}%)
+                </span>
+              </span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#666' }}>剩余：</span>
-              <span style={{ fontWeight: 700, color: billingStatus.color, fontSize: 13 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <span style={{ color: '#888', fontSize: 10 }}>剩余</span>
+              <span style={{ fontWeight: 700, color: billingStatus.color, fontSize: 14 }}>
                 ${billingStatus.detail.remaining}
               </span>
             </div>
@@ -162,8 +164,8 @@ export default function MobileSiteCard({
               margin: 0,
               fontSize: 11,
               fontWeight: 600,
-              padding: '4px 10px',
-              borderRadius: 8
+              padding: '3px 8px',
+              borderRadius: 6
             }}
           >
             {billingStatus.text}
@@ -174,38 +176,38 @@ export default function MobileSiteCard({
       {/* API密钥 */}
       {site.apiKey && (
         <div style={{ 
-          background: '#f5f5f5', 
-          padding: 8, 
-          borderRadius: 8, 
-          marginBottom: 12 
+          background: '#f7f7f7', 
+          padding: '6px 8px', 
+          borderRadius: 6, 
+          marginBottom: 8 
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography.Text 
               code 
               style={{ 
-                fontSize: 11, 
+                fontSize: 10, 
                 fontFamily: 'monospace',
                 wordBreak: 'break-all',
                 flex: 1,
-                marginRight: 8
+                marginRight: 6
               }}
             >
               {displayApiKey}
             </Typography.Text>
-            <Space size={4}>
+            <Space size={2}>
               <Button
                 type="text"
                 size="small"
                 icon={isApiKeyVisible ? <EyeInvisibleOutlined /> : <EyeOutlined />}
                 onClick={() => onToggleApiKey(site.id)}
-                style={{ padding: '0 4px', height: 24 }}
+                style={{ padding: '2px', height: 20, width: 20 }}
               />
               <Button
                 type="text"
                 size="small"
                 icon={<CopyOutlined />}
                 onClick={() => onCopyApiKey(site.apiKey)}
-                style={{ padding: '0 4px', height: 24 }}
+                style={{ padding: '2px', height: 20, width: 20 }}
               />
             </Space>
           </div>
@@ -213,8 +215,8 @@ export default function MobileSiteCard({
       )}
 
       {/* 标签信息 */}
-      <Space size={4} wrap style={{ marginBottom: 12 }}>
-        <Tag color="blue" style={{ fontSize: 11, margin: 0 }}>
+      <Space size={3} wrap style={{ marginBottom: 8 }}>
+        <Tag color="blue" style={{ fontSize: 10, margin: 0, padding: '1px 6px' }}>
           {site.apiType === 'newapi' ? 'NewAPI' : 
            site.apiType === 'veloera' ? 'Veloera' :
            site.apiType === 'donehub' ? 'DoneHub' :
@@ -225,25 +227,24 @@ export default function MobileSiteCard({
           <Tag 
             color={site.checkInSuccess === true ? 'success' : 
                    site.checkInSuccess === false ? 'error' : 'warning'}
-            style={{ fontSize: 11, margin: 0 }}
+            style={{ fontSize: 10, margin: 0, padding: '1px 6px' }}
           >
-            {site.checkInSuccess === true ? <CheckCircleOutlined /> :
-             site.checkInSuccess === false ? <CloseCircleOutlined /> :
-             <ExclamationCircleOutlined />}
-            {' '}签到
+            {site.checkInSuccess === true ? '✓' :
+             site.checkInSuccess === false ? '✗' : '○'}
+            签到
           </Tag>
         )}
         
         {/* 定时计划 */}
         {scheduleDisplay.type && (
-          <Tag color={scheduleDisplay.color} style={{ fontSize: 11, margin: 0 }}>
-            <ClockCircleOutlined /> {scheduleDisplay.type} {scheduleDisplay.text}
+          <Tag color={scheduleDisplay.color} style={{ fontSize: 10, margin: 0, padding: '1px 6px' }}>
+            ⏰ {scheduleDisplay.type} {scheduleDisplay.text}
           </Tag>
         )}
         
         {site.lastCheckedAt && (
-          <Tag color="default" style={{ fontSize: 10, margin: 0 }}>
-            检测: {new Date(site.lastCheckedAt).toLocaleString('zh-CN', { 
+          <Tag color="default" style={{ fontSize: 9, margin: 0, padding: '1px 6px' }}>
+            {new Date(site.lastCheckedAt).toLocaleString('zh-CN', { 
               month: '2-digit', 
               day: '2-digit', 
               hour: '2-digit', 
@@ -253,13 +254,13 @@ export default function MobileSiteCard({
         )}
       </Space>
 
-      <Divider style={{ margin: '12px 0' }} />
+      <Divider style={{ margin: '8px 0' }} />
 
       {/* 操作按钮 */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', 
-        gap: 8 
+        gap: isMobile ? 6 : 5 
       }}>
         <Button
           type="primary"
@@ -267,7 +268,7 @@ export default function MobileSiteCard({
           onClick={() => onView(site.id)}
           block
           size="small"
-          style={{ fontSize: 12 }}
+          style={{ fontSize: 11, padding: '4px 8px', height: 28 }}
         >
           {isMobile ? '详情' : '查看'}
         </Button>
@@ -276,7 +277,7 @@ export default function MobileSiteCard({
           onClick={() => onCheck(site.id)}
           block
           size="small"
-          style={{ fontSize: 12, color: '#52c41a', borderColor: '#52c41a' }}
+          style={{ fontSize: 11, padding: '4px 8px', height: 28, color: '#52c41a', borderColor: '#52c41a' }}
         >
           检测
         </Button>
@@ -285,7 +286,7 @@ export default function MobileSiteCard({
           onClick={() => onDebug(site)}
           block
           size="small"
-          style={{ fontSize: 12, color: '#fa8c16', borderColor: '#fa8c16' }}
+          style={{ fontSize: 11, padding: '4px 8px', height: 28, color: '#fa8c16', borderColor: '#fa8c16' }}
         >
           调试
         </Button>
@@ -294,7 +295,7 @@ export default function MobileSiteCard({
           onClick={() => onSetTime(site)}
           block
           size="small"
-          style={{ fontSize: 12 }}
+          style={{ fontSize: 11, padding: '4px 8px', height: 28 }}
         >
           定时
         </Button>
@@ -303,7 +304,7 @@ export default function MobileSiteCard({
           onClick={() => onEdit(site)}
           block
           size="small"
-          style={{ fontSize: 12, color: '#1890ff', borderColor: '#1890ff' }}
+          style={{ fontSize: 11, padding: '4px 8px', height: 28, color: '#1890ff', borderColor: '#1890ff' }}
         >
           编辑
         </Button>
@@ -313,7 +314,7 @@ export default function MobileSiteCard({
           onClick={() => onDelete(site)}
           block
           size="small"
-          style={{ fontSize: 12 }}
+          style={{ fontSize: 11, padding: '4px 8px', height: 28 }}
         >
           删除
         </Button>
