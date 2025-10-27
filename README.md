@@ -169,6 +169,26 @@ docker-compose down
 docker-compose up -d --build
 ```
 
+**更新到最新版本**
+
+```bash
+# 方法一：一键更新（推荐）
+docker-compose pull && docker-compose up -d
+
+# 方法二：完整更新流程
+docker-compose down                          # 停止容器
+docker rmi ghcr.io/ruawd/api-manager:latest # 删除旧镜像
+docker pull ghcr.io/ruawd/api-manager:latest # 拉取最新镜像
+docker-compose up -d                         # 启动新容器
+
+# 查看镜像版本和创建时间
+docker images ghcr.io/ruawd/api-manager
+
+# 清理未使用的旧镜像（可选）
+docker image prune -a
+```
+
+
 启动后访问 `http://localhost:3006` 进行注册
 
 ---
