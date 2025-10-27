@@ -15,7 +15,9 @@ import {
   KeyOutlined,
   EditOutlined,
   DeleteOutlined,
-  GiftOutlined
+  GiftOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
@@ -26,6 +28,168 @@ function authHeaders(includeJson = false) {
   return h;
 }
 
+// 提取模型提供者
+function getModelProvider(modelId) {
+  const id = modelId.toLowerCase()
+  if (id.includes('gpt') || id.includes('o1') || id.includes('o3') || id.includes('chatgpt')) return 'OpenAI'
+  if (id.includes('claude')) return 'Claude'
+  if (id.includes('qwen')) return 'Qwen'
+  if (id.includes('gemini')) return 'Gemini'
+  if (id.includes('deepseek')) return 'DeepSeek'
+  if (id.includes('zhipu') || id.includes('glm')) return 'ZhipuAI'
+  if (id.includes('yi-') || id.includes('01-ai')) return '01.AI'
+  if (id.includes('mistral')) return 'Mistral'
+  if (id.includes('llama')) return 'Meta'
+  if (id.includes('moonshot')) return 'Moonshot'
+  return '其他'
+}
+
+// 获取提供者图标组件
+function getProviderIcon(provider, size = 16) {
+  const style = { 
+    width: size, 
+    height: size, 
+    borderRadius: '50%',
+    objectFit: 'cover'
+  }
+  
+  const iconMap = {
+    'OpenAI': <span style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      width: size, 
+      height: size, 
+      borderRadius: '50%',
+      background: '#10a37f',
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: size * 0.6
+    }}>O</span>,
+    'Claude': <span style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      width: size, 
+      height: size, 
+      borderRadius: '50%',
+      background: '#CC9B7A',
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: size * 0.6
+    }}>C</span>,
+    'Qwen': <span style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      width: size, 
+      height: size, 
+      borderRadius: '50%',
+      background: '#6366f1',
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: size * 0.5
+    }}>通义</span>,
+    'Gemini': <span style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      width: size, 
+      height: size, 
+      borderRadius: '50%',
+      background: '#4285f4',
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: size * 0.6
+    }}>G</span>,
+    'DeepSeek': <span style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      width: size, 
+      height: size, 
+      borderRadius: '50%',
+      background: '#1a1a1a',
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: size * 0.6
+    }}>DS</span>,
+    'ZhipuAI': <span style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      width: size, 
+      height: size, 
+      borderRadius: '50%',
+      background: '#2563eb',
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: size * 0.6
+    }}>Z</span>,
+    '01.AI': <span style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      width: size, 
+      height: size, 
+      borderRadius: '50%',
+      background: '#8b5cf6',
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: size * 0.6
+    }}>Y</span>,
+    'Mistral': <span style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      width: size, 
+      height: size, 
+      borderRadius: '50%',
+      background: '#f97316',
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: size * 0.6
+    }}>M</span>,
+    'Meta': <span style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      width: size, 
+      height: size, 
+      borderRadius: '50%',
+      background: '#0668E1',
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: size * 0.6
+    }}>M</span>,
+    'Moonshot': <span style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      width: size, 
+      height: size, 
+      borderRadius: '50%',
+      background: '#7c3aed',
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: size * 0.5
+    }}>月</span>,
+    '其他': <span style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      width: size, 
+      height: size, 
+      borderRadius: '50%',
+      background: '#94a3b8',
+      color: 'white',
+      fontWeight: 'bold',
+      fontSize: size * 0.6
+    }}>?</span>
+  }
+  return iconMap[provider] || iconMap['其他']
+}
+
 export default function SiteDetail() {
   const { id } = useParams()
   const nav = useNavigate()
@@ -34,6 +198,13 @@ export default function SiteDetail() {
   const [snapshot, setSnapshot] = useState([])
   const [loading, setLoading] = useState(false)
   const [modelsExpanded, setModelsExpanded] = useState(true)
+  const [modelSearchText, setModelSearchText] = useState('')
+  const [selectedProvider, setSelectedProvider] = useState('all')
+  const [selectedGroup, setSelectedGroup] = useState('all')
+  const [showRealPrice, setShowRealPrice] = useState(false)
+  const [showMultiplier, setShowMultiplier] = useState(true)
+  const [showEndpoint, setShowEndpoint] = useState(true)
+  const [modelPricing, setModelPricing] = useState({})
   
   // 令牌管理相关状态
   const [tokenModalVisible, setTokenModalVisible] = useState(false)
@@ -41,8 +212,10 @@ export default function SiteDetail() {
   const [tokenLoading, setTokenLoading] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [editingToken, setEditingToken] = useState(null)
+  const [createModalVisible, setCreateModalVisible] = useState(false)
   const [groups, setGroups] = useState([])
   const [form] = Form.useForm()
+  const [createForm] = Form.useForm()
   
   // 兑换码相关状态
   const [redeemModalVisible, setRedeemModalVisible] = useState(false)
@@ -72,6 +245,71 @@ export default function SiteDetail() {
     const names = models.map(m => m.id).join(',')
     copyToClipboard(names, `已复制 ${models.length} 个模型名称`)
   }, [copyToClipboard])
+  
+  // 筛选和分组模型
+  const filteredAndGroupedModels = useMemo(() => {
+    let filtered = snapshot
+    
+    // 搜索筛选
+    if (modelSearchText) {
+      filtered = filtered.filter(m => 
+        m.id.toLowerCase().includes(modelSearchText.toLowerCase())
+      )
+    }
+    
+    // 提供者筛选
+    if (selectedProvider !== 'all') {
+      filtered = filtered.filter(m => 
+        getModelProvider(m.id) === selectedProvider
+      )
+    }
+    
+    // 用户分组筛选
+    if (selectedGroup !== 'all') {
+      filtered = filtered.filter(m => {
+        const pricing = modelPricing[m.id]
+        if (!pricing || !pricing.groups) return false
+        return pricing.groups.includes(selectedGroup)
+      })
+    }
+    
+    // 按提供者分组
+    const grouped = {}
+    filtered.forEach(model => {
+      const provider = getModelProvider(model.id)
+      if (!grouped[provider]) {
+        grouped[provider] = []
+      }
+      grouped[provider].push(model)
+    })
+    
+    return { filtered, grouped }
+  }, [snapshot, modelSearchText, selectedProvider, selectedGroup, modelPricing])
+  
+  // 获取所有提供者及数量
+  const providers = useMemo(() => {
+    const providerCount = {}
+    snapshot.forEach(model => {
+      const provider = getModelProvider(model.id)
+      providerCount[provider] = (providerCount[provider] || 0) + 1
+    })
+    return Object.entries(providerCount).sort((a, b) => b[1] - a[1])
+  }, [snapshot])
+  
+  // 从pricing数据中提取所有用户分组
+  const availableGroups = useMemo(() => {
+    const groupSet = new Set()
+    Object.values(modelPricing).forEach(pricing => {
+      if (pricing.groups && Array.isArray(pricing.groups)) {
+        pricing.groups.forEach(g => groupSet.add(g))
+      }
+    })
+    // 转换为Select需要的格式
+    return Array.from(groupSet).map(g => ({
+      value: g,
+      label: g || 'default'
+    }))
+  }, [modelPricing])
   
   // 获取令牌列表（通过后端代理）
   const loadTokens = async () => {
@@ -285,6 +523,65 @@ export default function SiteDetail() {
     loadTokens()
   }
   
+  // 打开创建令牌弹窗
+  const openCreateModal = async () => {
+    await loadGroups()
+    createForm.resetFields()
+    // 设置默认值
+    createForm.setFieldsValue({
+      name: '',
+      neverExpire: true,
+      unlimitedQuota: true,
+      remainQuota: 500000,
+      modelLimitsEnabled: false
+    })
+    setCreateModalVisible(true)
+  }
+  
+  // 创建令牌
+  const handleCreateToken = async () => {
+    try {
+      const values = await createForm.validateFields()
+      const payload = {
+        name: values.name,
+        group: values.group || '',
+        expired_time: values.neverExpire ? -1 : Math.floor(values.expiredTime.valueOf() / 1000),
+        unlimited_quota: values.unlimitedQuota,
+        remain_quota: values.unlimitedQuota ? 0 : values.remainQuota,
+        model_limits_enabled: values.modelLimitsEnabled || false,
+        model_limits: values.modelLimitsEnabled ? (values.modelLimits || '') : '',
+        allow_ips: values.allowIps || ''
+      }
+      
+      const res = await fetch(`/api/sites/${id}/tokens`, {
+        method: 'POST',
+        headers: authHeaders(true),
+        body: JSON.stringify(payload)
+      })
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || '创建令牌失败')
+      }
+      
+      const data = await res.json()
+      if (data.success) {
+        message.success('创建成功！')
+        setCreateModalVisible(false)
+        createForm.resetFields()
+        loadTokens()
+      } else {
+        throw new Error(data.message || '创建令牌失败')
+      }
+    } catch (e) {
+      if (e.errorFields) {
+        message.error('请填写完整信息')
+      } else {
+        message.error(e.message || '创建令牌失败')
+      }
+    }
+  }
+  
   // 打开兑换码弹窗
   const openRedeemModal = () => {
     setRedeemModalVisible(true)
@@ -370,6 +667,7 @@ export default function SiteDetail() {
       const sdata = await sres.json()
       let items = Array.isArray(sdata) && sdata.length ? (sdata[0].modelsJson || []) : []
       items = items.filter(m => !String(m.id || '').toLowerCase().includes('custom'))
+      console.log('快照中的前5个模型名称:', items.slice(0, 5).map(m => m.id))
       setSnapshot(items)
     } catch (e) { 
       message.error(e.message || '加载模型列表失败，请稍后重试') 
@@ -383,6 +681,119 @@ export default function SiteDetail() {
       }
     } catch (e) {
       console.error('加载子站点失败:', e)
+    }
+    // 加载模型价格信息
+    try {
+      const pricingRes = await fetch(`/api/sites/${id}/pricing`, { headers: authHeaders() })
+      if (pricingRes.ok) {
+        const pricingData = await pricingRes.json()
+        console.log('完整的pricing API响应:', pricingData)
+        
+        const siteType = pricingData.siteType || 'newapi'
+        console.log('站点类型:', siteType)
+        
+        // 转换为 { modelName: pricingInfo } 的格式
+        const pricingMap = {}
+        if (pricingData && pricingData.data) {
+          // 提取group_ratio，用于计算不同分组的实际价格
+          const groupRatio = pricingData.group_ratio || {}
+          console.log('分组倍率:', groupRatio)
+          
+          // OneHub 类型的数据是对象，其他类型是数组
+          const dataItems = Array.isArray(pricingData.data) 
+            ? pricingData.data 
+            : Object.entries(pricingData.data).map(([modelName, modelData]) => ({
+                model_name: modelName,
+                ...modelData,
+                // OneHub 的价格结构：直接提供 input/output
+                quota_type: modelData.price?.type === 'tokens' ? 0 : 1,
+                model_ratio: 1,
+                model_price: {
+                  input: modelData.price?.input || 0,
+                  output: modelData.price?.output || 0
+                },
+                completion_ratio: modelData.price?.output / modelData.price?.input || 1,
+                enable_groups: modelData.groups?.length > 0 ? modelData.groups : ['default']
+              }))
+          
+          console.log('处理后的数据项数量:', dataItems.length)
+          if (dataItems.length > 0) {
+            console.log('第一个数据项:', dataItems[0])
+          }
+          
+          dataItems.forEach(item => {
+            const modelRatio = item.model_ratio || 1
+            const completionRatio = item.completion_ratio || 1
+            const quotaType = item.quota_type || 0
+            
+            let inputPrice, outputPrice
+            
+            if (siteType === 'onehub' || siteType === 'donehub') {
+              // OneHub/DoneHub: 直接使用 model_price 中的 input/output
+              if (typeof item.model_price === 'object') {
+                if (quotaType === 1) {
+                  // 按次计费：API返回的单位是"千分之一美元"，需要除以1000，然后×2
+                  inputPrice = (item.model_price.input || 0) / 1000 * 2
+                  outputPrice = (item.model_price.output || 0) / 1000 * 2
+                } else {
+                  // 按量计费：API返回的是基础价格，需要×2（与NewAPI一致）
+                  inputPrice = (item.model_price.input || 0) * 2
+                  outputPrice = (item.model_price.output || 0) * 2
+                }
+              } else {
+                inputPrice = 0
+                outputPrice = 0
+              }
+            } else {
+              // NewAPI/Veloera/其他: 使用倍率计算
+              if (quotaType === 0) {
+                // 按量计费
+                // inputUSD (每 1M token) = model_ratio × 2
+                // outputUSD (每 1M token) = model_ratio × completion_ratio × 2
+                inputPrice = modelRatio * 2
+                outputPrice = modelRatio * completionRatio * 2
+              } else {
+                // 按次计费：使用 model_price
+                if (typeof item.model_price === 'object') {
+                  inputPrice = item.model_price.input || 0
+                  outputPrice = item.model_price.output || 0
+                } else {
+                  inputPrice = item.model_price || 0
+                  outputPrice = item.model_price || 0
+                }
+              }
+            }
+            
+            pricingMap[item.model_name] = {
+              input: inputPrice,
+              output: outputPrice,
+              modelRatio: modelRatio,
+              completionRatio: completionRatio,
+              quotaType: quotaType, // 0=按量, 1=按次
+              groups: item.enable_groups || [],
+              groupRatio: groupRatio, // 保存分组倍率信息
+              siteType: siteType
+            }
+            
+            // 调试：打印前3个模型的价格
+            if (Object.keys(pricingMap).length <= 3) {
+              console.log(`[价格解析] ${item.model_name}:`, {
+                input: inputPrice,
+                output: outputPrice,
+                quotaType: quotaType,
+                siteType: siteType
+              })
+            }
+          })
+          
+          console.log('解析后的模型价格:', pricingMap)
+          console.log('第一个模型的价格详情:', Object.values(pricingMap)[0])
+          console.log('价格数据的所有模型名称:', Object.keys(pricingMap))
+        }
+        setModelPricing(pricingMap)
+      }
+    } catch (e) {
+      console.log('获取价格信息失败，将使用默认值:', e)
     }
   }
   
@@ -871,26 +1282,159 @@ export default function SiteDetail() {
           border: '1px solid rgba(24, 144, 255, 0.1)'
         }}
       >
-        {modelsExpanded && (
-          snapshot.length === 0 ? (
-            <Empty 
-              description="暂无模型数据，请先执行检测"
-              style={{ padding: '40px 0' }}
-            />
-          ) : (
-            <List
-              grid={{ gutter: 12, xs: 1, sm: 2, md: 3, lg: 4, xl: 5, xxl: 6 }}
-              dataSource={snapshot}
-              pagination={snapshot.length > 50 ? {
-                pageSize: 50,
-                showSizeChanger: false,
-                showTotal: (total) => `共 ${total} 个模型`,
-                position: 'bottom',
-                style: { marginTop: 16, textAlign: 'center' }
-              } : false}
-              renderItem={(m) => <ModelCard key={m.id} model={m} onCopy={copyToClipboard} />}
-            />
-          )
+        {snapshot.length === 0 ? (
+          <Empty 
+            description="暂无模型数据，请先执行检测"
+            style={{ padding: '40px 0' }}
+          />
+        ) : (
+          <>
+            {/* 搜索和筛选区域 */}
+            <div style={{ marginBottom: 20 }}>
+              <Row gutter={[16, 16]}>
+                <Col xs={24} md={12}>
+                  <div>
+                    <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>搜索模型</Typography.Text>
+                    <Input
+                      placeholder="输入模型名称或描述..."
+                      prefix={<ApiOutlined style={{ color: '#bfbfbf' }} />}
+                      value={modelSearchText}
+                      onChange={(e) => setModelSearchText(e.target.value)}
+                      allowClear
+                      style={{ borderRadius: 8 }}
+                    />
+                  </div>
+                </Col>
+                <Col xs={24} md={12}>
+                  <div>
+                    <Typography.Text strong style={{ display: 'block', marginBottom: 8 }}>用户分组</Typography.Text>
+                    <Select
+                      value={selectedGroup}
+                      onChange={setSelectedGroup}
+                      style={{ width: '100%' }}
+                    >
+                      <Select.Option value="all">全部分组</Select.Option>
+                      {availableGroups.map((g) => (
+                        <Select.Option key={g.value} value={g.value}>
+                          {g.label}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </div>
+                </Col>
+              </Row>
+            </div>
+
+            {/* 显示选项开关 */}
+            <div style={{ 
+              marginBottom: 20, 
+              padding: '12px 16px',
+              background: '#fafafa',
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 24,
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ApiOutlined style={{ color: '#666' }} />
+                <Typography.Text strong style={{ color: '#666' }}>显示选项:</Typography.Text>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Typography.Text>真实充值金额</Typography.Text>
+                <Switch 
+                  checked={showRealPrice} 
+                  onChange={setShowRealPrice}
+                  size="small"
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Typography.Text>显示倍率</Typography.Text>
+                <Switch 
+                  checked={showMultiplier} 
+                  onChange={setShowMultiplier}
+                  size="small"
+                  defaultChecked
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Typography.Text>端点类型</Typography.Text>
+                <Switch 
+                  checked={showEndpoint} 
+                  onChange={setShowEndpoint}
+                  size="small"
+                  defaultChecked
+                />
+              </div>
+            </div>
+
+            {/* 功能按钮和统计 */}
+            <div style={{ marginBottom: 20, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Button 
+                icon={<CopyOutlined />}
+                onClick={() => copyAllModels(filteredAndGroupedModels.filtered)}
+              >
+                复制所有模型名称
+              </Button>
+              <Typography.Text type="secondary" style={{ marginLeft: 'auto' }}>
+                总计 {snapshot.length} 个模型 | 显示 {filteredAndGroupedModels.filtered.length} 个
+              </Typography.Text>
+            </div>
+
+            {/* 提供者标签筛选 */}
+            <div style={{ marginBottom: 20 }}>
+              <Space wrap>
+                <Button
+                  type={selectedProvider === 'all' ? 'primary' : 'default'}
+                  onClick={() => setSelectedProvider('all')}
+                  icon={<ApiOutlined />}
+                  style={{ borderRadius: 20 }}
+                >
+                  所有厂商 ({snapshot.length})
+                </Button>
+                {providers.map(([provider, count]) => (
+                  <Button
+                    key={provider}
+                    type={selectedProvider === provider ? 'primary' : 'default'}
+                    onClick={() => setSelectedProvider(provider)}
+                    style={{ borderRadius: 20 }}
+                  >
+                    {getProviderIcon(provider)} {provider} ({count})
+                  </Button>
+                ))}
+              </Space>
+            </div>
+
+            {/* 模型列表 */}
+            {modelsExpanded && (
+              filteredAndGroupedModels.filtered.length === 0 ? (
+                <Empty description="没有匹配的模型" style={{ padding: '40px 0' }} />
+              ) : (
+                <List
+                  grid={{ gutter: 12, xs: 1, sm: 2, md: 2, lg: 3, xl: 4, xxl: 5 }}
+                  dataSource={filteredAndGroupedModels.filtered}
+                  pagination={filteredAndGroupedModels.filtered.length > 50 ? {
+                    pageSize: 50,
+                    showSizeChanger: false,
+                    showTotal: (total) => `共 ${total} 个模型`,
+                    position: 'bottom',
+                    style: { marginTop: 16, textAlign: 'center' }
+                  } : false}
+                  renderItem={(m) => (
+                    <EnhancedModelCard 
+                      key={m.id} 
+                      model={m} 
+                      onCopy={copyToClipboard}
+                      showRealPrice={showRealPrice}
+                      showMultiplier={showMultiplier}
+                      showEndpoint={showEndpoint}
+                      pricing={modelPricing[m.id]}
+                    />
+                  )}
+                />
+              )
+            )}
+          </>
         )}
       </Card>
 
@@ -944,271 +1488,70 @@ export default function SiteDetail() {
       {/* 令牌管理弹窗 - 移动端使用Drawer */}
       {isMobile ? (
         <Drawer
-          title={<Typography.Title level={4} style={{ margin: 0 }}>令牌管理</Typography.Title>}
+          title={
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography.Title level={4} style={{ margin: 0 }}>令牌管理</Typography.Title>
+              <Button 
+                type="primary" 
+                icon={<PlusCircleOutlined />}
+                onClick={openCreateModal}
+              >
+                创建令牌
+              </Button>
+            </div>
+          }
           open={tokenModalVisible}
           onClose={() => setTokenModalVisible(false)}
           placement="bottom"
           height="90%"
         >
-          <Table
-            dataSource={tokens}
-            loading={tokenLoading}
-            rowKey="id"
-            pagination={false}
-            scroll={{ x: 800 }}
-            size="small"
-            columns={[
-            {
-              title: 'ID',
-              dataIndex: 'id',
-              width: 60,
-              fixed: 'left'
-            },
-            {
-              title: '名称',
-              dataIndex: 'name',
-              width: 120,
-              ellipsis: true
-            },
-            {
-              title: '令牌',
-              dataIndex: 'key',
-              width: 400,
-              render: (key) => {
-                const fullKey = `sk-${key}`
-                return (
-                  <Typography.Text 
-                    code
-                    copyable
-                    style={{ 
-                      fontFamily: 'monospace',
-                      fontSize: '12px',
-                      wordBreak: 'break-all'
-                    }}
-                  >
-                    {fullKey}
-                  </Typography.Text>
-                )
-              }
-            },
-            {
-              title: '分组',
-              dataIndex: 'group',
-              width: 100,
-              render: (group) => {
-                if (!group || group === '') {
-                  return <Tag color="default">用户分组</Tag>
-                }
-                return <Tag color="blue">{group}</Tag>
-              }
-            },
-            {
-              title: '过期时间',
-              dataIndex: 'expired_time',
-              width: 150,
-              render: (time) => time === -1 ? <Tag color="green">永不过期</Tag> : new Date(time * 1000).toLocaleString('zh-CN')
-            },
-            {
-              title: '额度',
-              dataIndex: 'remain_quota',
-              width: 120,
-              render: (quota, record) => record.unlimited_quota 
-                ? <Tag className="tag-unlimited">无限额</Tag> 
-                : (quota / 500000).toFixed(2) + ' $'
-            },
-            {
-              title: '已使用',
-              dataIndex: 'used_quota',
-              width: 120,
-              render: (quota) => (quota / 500000).toFixed(2) + ' $'
-            },
-            {
-              title: '状态',
-              dataIndex: 'status',
-              width: 80,
-              render: (status) => status === 1 ? <Tag color="success">启用</Tag> : <Tag color="error">禁用</Tag>
-            },
-            {
-              title: '创建时间',
-              dataIndex: 'created_time',
-              width: 150,
-              render: (time) => new Date(time * 1000).toLocaleString('zh-CN')
-            },
-            {
-              title: '最后访问',
-              dataIndex: 'accessed_time',
-              width: 150,
-              render: (time) => time ? new Date(time * 1000).toLocaleString('zh-CN') : '-'
-            },
-            {
-              title: '操作',
-              key: 'actions',
-              width: 120,
-              fixed: 'right',
-              render: (_, record) => (
-                <Space>
-                  <Button
-                    type="primary"
-                    size="small"
-                    icon={<EditOutlined />}
-                    onClick={() => openEditModal(record)}
-                  >
-                    编辑
-                  </Button>
-                  <Popconfirm
-                    title="确认删除"
-                    description="确定要删除这个令牌吗？"
-                    onConfirm={() => deleteToken(record.id)}
-                    okText="确认"
-                    cancelText="取消"
-                  >
-                    <Button
-                      danger
-                      size="small"
-                      icon={<DeleteOutlined />}
-                    >
-                      删除
-                    </Button>
-                  </Popconfirm>
-                </Space>
-              )
-            }
-          ]}
-          />
+          {tokenLoading ? (
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <Typography.Text>加载中...</Typography.Text>
+            </div>
+          ) : tokens.length === 0 ? (
+            <Empty description="暂无令牌，点击右上角创建新令牌" />
+          ) : (
+            <List
+              grid={{ gutter: 16, xs: 1, sm: 1, md: 1 }}
+              dataSource={tokens}
+              renderItem={(token) => <TokenCard token={token} onEdit={openEditModal} onDelete={deleteToken} />}
+            />
+          )}
         </Drawer>
       ) : (
         <Modal
-          title={<Typography.Title level={4} style={{ margin: 0 }}>令牌管理</Typography.Title>}
+          title={
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: 24 }}>
+              <Typography.Title level={4} style={{ margin: 0 }}>令牌管理</Typography.Title>
+              <Button 
+                type="primary" 
+                icon={<PlusCircleOutlined />}
+                onClick={openCreateModal}
+              >
+                创建令牌
+              </Button>
+            </div>
+          }
           open={tokenModalVisible}
           onCancel={() => setTokenModalVisible(false)}
           footer={null}
           width={1200}
           style={{ top: 20 }}
         >
-          <Table
-            dataSource={tokens}
-            loading={tokenLoading}
-            rowKey="id"
-            pagination={false}
-            scroll={{ x: 1000 }}
-            columns={[
-            {
-              title: 'ID',
-              dataIndex: 'id',
-              width: 60,
-              fixed: 'left'
-            },
-            {
-              title: '名称',
-              dataIndex: 'name',
-              width: 120,
-              ellipsis: true
-            },
-            {
-              title: '令牌',
-              dataIndex: 'key',
-              width: 400,
-              render: (key) => {
-                const fullKey = `sk-${key}`
-                return (
-                  <Typography.Text 
-                    code
-                    copyable
-                    style={{ 
-                      fontFamily: 'monospace',
-                      fontSize: '12px',
-                      wordBreak: 'break-all'
-                    }}
-                  >
-                    {fullKey}
-                  </Typography.Text>
-                )
-              }
-            },
-            {
-              title: '分组',
-              dataIndex: 'group',
-              width: 100,
-              render: (group) => {
-                if (!group || group === '') {
-                  return <Tag color="default">用户分组</Tag>
-                }
-                return <Tag color="blue">{group}</Tag>
-              }
-            },
-            {
-              title: '过期时间',
-              dataIndex: 'expired_time',
-              width: 150,
-              render: (time) => time === -1 ? <Tag color="green">永不过期</Tag> : new Date(time * 1000).toLocaleString('zh-CN')
-            },
-            {
-              title: '额度',
-              dataIndex: 'remain_quota',
-              width: 120,
-              render: (quota, record) => record.unlimited_quota 
-                ? <Tag className="tag-unlimited">无限额</Tag> 
-                : (quota / 500000).toFixed(2) + ' $'
-            },
-            {
-              title: '已使用',
-              dataIndex: 'used_quota',
-              width: 120,
-              render: (quota) => (quota / 500000).toFixed(2) + ' $'
-            },
-            {
-              title: '状态',
-              dataIndex: 'status',
-              width: 80,
-              render: (status) => status === 1 ? <Tag color="success">启用</Tag> : <Tag color="error">禁用</Tag>
-            },
-            {
-              title: '创建时间',
-              dataIndex: 'created_time',
-              width: 150,
-              render: (time) => new Date(time * 1000).toLocaleString('zh-CN')
-            },
-            {
-              title: '最后访问',
-              dataIndex: 'accessed_time',
-              width: 150,
-              render: (time) => time ? new Date(time * 1000).toLocaleString('zh-CN') : '-'
-            },
-            {
-              title: '操作',
-              key: 'actions',
-              width: 120,
-              fixed: 'right',
-              render: (_, record) => (
-                <Space>
-                  <Button
-                    type="primary"
-                    size="small"
-                    icon={<EditOutlined />}
-                    onClick={() => openEditModal(record)}
-                  >
-                    编辑
-                  </Button>
-                  <Popconfirm
-                    title="确认删除"
-                    description="确定要删除这个令牌吗？"
-                    onConfirm={() => deleteToken(record.id)}
-                    okText="确认"
-                    cancelText="取消"
-                  >
-                    <Button
-                      danger
-                      size="small"
-                      icon={<DeleteOutlined />}
-                    >
-                      删除
-                    </Button>
-                  </Popconfirm>
-                </Space>
-              )
-            }
-          ]}
-        />
+          {tokenLoading ? (
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <Typography.Text>加载中...</Typography.Text>
+            </div>
+          ) : tokens.length === 0 ? (
+            <Empty description="暂无令牌，点击右上角创建新令牌" />
+          ) : (
+            <List
+              grid={{ gutter: 16, xs: 1, sm: 2, md: 2, lg: 3 }}
+              dataSource={tokens}
+              renderItem={(token) => <TokenCard token={token} onEdit={openEditModal} onDelete={deleteToken} />}
+            />
+          )}
         </Modal>
       )}
 
@@ -1292,6 +1635,258 @@ export default function SiteDetail() {
                     <Form.Item name="remainQuota" label="剩余额度（原始值）">
                       <InputNumber
                         placeholder="请输入剩余额度"
+                        style={{ width: '100%' }}
+                        min={0}
+                      />
+                    </Form.Item>
+                  )
+                }
+              </Form.Item>
+            </Space>
+          </Form.Item>
+
+          <Form.Item
+            label="IP白名单"
+            name="allowIps"
+            extra="一行一个IP地址，不填则不限制"
+          >
+            <Input.TextArea
+              placeholder="例如：&#10;192.168.1.1&#10;10.0.0.1&#10;172.16.0.0/12"
+              rows={4}
+            />
+          </Form.Item>
+
+          <Form.Item name="modelLimitsEnabled" valuePropName="checked" label="启用模型限制">
+            <Switch />
+          </Form.Item>
+
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) => prevValues.modelLimitsEnabled !== currentValues.modelLimitsEnabled}
+          >
+            {({ getFieldValue }) =>
+              getFieldValue('modelLimitsEnabled') && (
+                <Form.Item
+                  label="模型限制"
+                  name="modelLimits"
+                  extra="多个模型请用逗号分隔"
+                >
+                  <Input.TextArea
+                    placeholder="例如: gpt-4, gpt-3.5-turbo"
+                    rows={3}
+                  />
+                </Form.Item>
+              )
+            }
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 创建令牌弹窗 */}
+      <Modal
+        title={<Typography.Title level={4} style={{ margin: 0 }}>创建令牌</Typography.Title>}
+        open={createModalVisible}
+        onCancel={() => {
+          setCreateModalVisible(false)
+          createForm.resetFields()
+        }}
+        onOk={handleCreateToken}
+        width={600}
+        okText="创建"
+        cancelText="取消"
+      >
+        <Form
+          form={createForm}
+          layout="vertical"
+          style={{ marginTop: 24 }}
+        >
+          <Form.Item
+            label="名称"
+            name="name"
+            rules={[{ required: true, message: '请输入令牌名称' }]}
+          >
+            <Input placeholder="请输入令牌名称" />
+          </Form.Item>
+
+          <Form.Item
+            label="分组"
+            name="group"
+            extra="不选择则使用用户默认分组"
+          >
+            <Select 
+              placeholder="请选择分组（可选）"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={groups}
+            />
+          </Form.Item>
+
+          <Form.Item label="过期时间">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Form.Item name="neverExpire" valuePropName="checked" noStyle>
+                <Switch checkedChildren="永不过期" unCheckedChildren="设置过期时间" defaultChecked />
+              </Form.Item>
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) => prevValues.neverExpire !== currentValues.neverExpire}
+              >
+                {({ getFieldValue }) =>
+                  !getFieldValue('neverExpire') && (
+                    <Form.Item name="expiredTime" rules={[{ required: true, message: '请选择过期时间' }]}>
+                      <DatePicker
+                        showTime
+                        format="YYYY-MM-DD HH:mm:ss"
+                        placeholder="选择过期时间"
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  )
+                }
+              </Form.Item>
+            </Space>
+          </Form.Item>
+
+          <Form.Item label="额度">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Form.Item name="unlimitedQuota" valuePropName="checked" noStyle>
+                <Switch checkedChildren="无限额" unCheckedChildren="设置额度" defaultChecked />
+              </Form.Item>
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) => prevValues.unlimitedQuota !== currentValues.unlimitedQuota}
+              >
+                {({ getFieldValue }) =>
+                  !getFieldValue('unlimitedQuota') && (
+                    <Form.Item name="remainQuota" label="初始额度（原始值，1美元 = 500000）" rules={[{ required: true, message: '请输入初始额度' }]}>
+                      <InputNumber
+                        placeholder="请输入初始额度"
+                        style={{ width: '100%' }}
+                        min={0}
+                      />
+                    </Form.Item>
+                  )
+                }
+              </Form.Item>
+            </Space>
+          </Form.Item>
+
+          <Form.Item
+            label="IP白名单"
+            name="allowIps"
+            extra="一行一个IP地址，不填则不限制"
+          >
+            <Input.TextArea
+              placeholder="例如：&#10;192.168.1.1&#10;10.0.0.1&#10;172.16.0.0/12"
+              rows={4}
+            />
+          </Form.Item>
+
+          <Form.Item name="modelLimitsEnabled" valuePropName="checked" label="启用模型限制">
+            <Switch />
+          </Form.Item>
+
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) => prevValues.modelLimitsEnabled !== currentValues.modelLimitsEnabled}
+          >
+            {({ getFieldValue }) =>
+              getFieldValue('modelLimitsEnabled') && (
+                <Form.Item
+                  label="模型限制"
+                  name="modelLimits"
+                  extra="多个模型请用逗号分隔"
+                >
+                  <Input.TextArea
+                    placeholder="例如: gpt-4, gpt-3.5-turbo"
+                    rows={3}
+                  />
+                </Form.Item>
+              )
+            }
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 兑换码弹窗 */}
+      <Modal
+        title={<Typography.Title level={4} style={{ margin: 0 }}>创建令牌</Typography.Title>}
+        open={createModalVisible}
+        onCancel={() => {
+          setCreateModalVisible(false)
+          createForm.resetFields()
+        }}
+        onOk={handleCreateToken}
+        width={600}
+        okText="创建"
+        cancelText="取消"
+      >
+        <Form
+          form={createForm}
+          layout="vertical"
+          style={{ marginTop: 24 }}
+        >
+          <Form.Item
+            label="名称"
+            name="name"
+            rules={[{ required: true, message: '请输入令牌名称' }]}
+          >
+            <Input placeholder="请输入令牌名称" />
+          </Form.Item>
+
+          <Form.Item
+            label="分组"
+            name="group"
+            extra="不选择则使用用户默认分组"
+          >
+            <Select 
+              placeholder="请选择分组（可选）"
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              options={groups}
+            />
+          </Form.Item>
+
+          <Form.Item label="过期时间">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Form.Item name="neverExpire" valuePropName="checked" noStyle>
+                <Switch checkedChildren="永不过期" unCheckedChildren="设置过期时间" defaultChecked />
+              </Form.Item>
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) => prevValues.neverExpire !== currentValues.neverExpire}
+              >
+                {({ getFieldValue }) =>
+                  !getFieldValue('neverExpire') && (
+                    <Form.Item name="expiredTime" rules={[{ required: true, message: '请选择过期时间' }]}>
+                      <DatePicker
+                        showTime
+                        format="YYYY-MM-DD HH:mm:ss"
+                        placeholder="选择过期时间"
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  )
+                }
+              </Form.Item>
+            </Space>
+          </Form.Item>
+
+          <Form.Item label="额度">
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Form.Item name="unlimitedQuota" valuePropName="checked" noStyle>
+                <Switch checkedChildren="无限额" unCheckedChildren="设置额度" defaultChecked />
+              </Form.Item>
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) => prevValues.unlimitedQuota !== currentValues.unlimitedQuota}
+              >
+                {({ getFieldValue }) =>
+                  !getFieldValue('unlimitedQuota') && (
+                    <Form.Item name="remainQuota" label="初始额度（原始值，1美元 = 500000）" rules={[{ required: true, message: '请输入初始额度' }]}>
+                      <InputNumber
+                        placeholder="请输入初始额度"
                         style={{ width: '100%' }}
                         min={0}
                       />
@@ -1451,6 +2046,331 @@ export default function SiteDetail() {
 }
 
 // 模型卡片组件 - 使用 memo 优化
+// 增强的模型卡片组件 - 显示价格和状态
+const EnhancedModelCard = memo(({ model, onCopy, showRealPrice, showMultiplier, showEndpoint, pricing }) => {
+  const provider = getModelProvider(model.id)
+  
+  // 调试：检查价格数据
+  if (!pricing && Math.random() < 0.02) { // 只打印2%的模型，避免刷屏
+    console.log(`[模型 ${model.id}] 没有找到价格数据`)
+  }
+  
+  // 获取模型价格（如果有pricing数据）
+  const getModelPrice = (type) => {
+    if (!pricing) {
+      // 没有价格数据，显示默认值
+      return '$2.00/M'
+    }
+    
+    let basePrice = type === 'input' ? pricing.input : pricing.output
+    
+    // 应用分组倍率（最终价格 = 基础价格 × groupRatio）
+    if (pricing.groupRatio && typeof pricing.groupRatio === 'object') {
+      // 默认使用 'default' 分组的倍率
+      const userGroup = 'default'
+      const groupMultiplier = pricing.groupRatio[userGroup] || 1
+      basePrice = basePrice * groupMultiplier
+    }
+    
+    if (typeof basePrice === 'number') {
+      // 根据价格大小决定显示精度
+      let formattedPrice
+      if (basePrice < 0.01) {
+        formattedPrice = basePrice.toFixed(4) // 小于0.01显示4位小数
+      } else if (basePrice < 1) {
+        formattedPrice = basePrice.toFixed(3) // 小于1显示3位小数
+      } else {
+        formattedPrice = basePrice.toFixed(2) // 大于等于1显示2位小数
+      }
+      
+      // 如果是按次计费
+      if (pricing.quotaType === 1) {
+        return `$${formattedPrice}/次`
+      }
+      // 按量计费，显示每百万tokens的价格
+      return `$${formattedPrice}/M`
+    }
+    
+    return '$2.00/M'
+  }
+  
+  // 获取倍率
+  const getMultiplier = () => {
+    if (!pricing) return '倍率: 1x / 补全: 1x'
+    const modelRatio = pricing.modelRatio || 1
+    const completionRatio = pricing.completionRatio || 1
+    return `倍率: ${modelRatio}x / 补全: ${completionRatio}x`
+  }
+  
+  // 获取计费类型
+  const getBillingType = () => {
+    if (!pricing) return '按量计费'
+    return pricing.quotaType === 1 ? '按次计费' : '按量计费'
+  }
+  
+  return (
+    <List.Item>
+      <Card 
+        size="small"
+        hoverable
+        style={{ 
+          borderRadius: 12,
+          background: '#fff',
+          border: '1px solid #e8e8e8',
+          position: 'relative',
+          transition: 'all 0.3s ease',
+          height: '100%'
+        }}
+        bodyStyle={{ padding: '14px' }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-2px)'
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)'
+          e.currentTarget.style.boxShadow = 'none'
+        }}
+      >
+        {/* 提供者图标 */}
+        <div style={{
+          position: 'absolute',
+          top: 10,
+          left: 10
+        }}>
+          {getProviderIcon(provider, 24)}
+        </div>
+        
+        {/* 复制按钮 */}
+        <Button
+          type="text"
+          size="small"
+          icon={<CopyOutlined />}
+          onClick={() => onCopy(model.id, `已复制: ${model.id}`)}
+          style={{
+            position: 'absolute',
+            top: 6,
+            right: 6,
+            fontSize: 12,
+            color: '#1890ff'
+          }}
+        />
+        
+        {/* 模型名称 */}
+        <Typography.Text 
+          strong 
+          style={{ 
+            fontSize: 13,
+            display: 'block',
+            marginTop: 26,
+            marginBottom: 8,
+            color: '#333',
+            paddingRight: 24,
+            lineHeight: 1.4,
+            wordBreak: 'break-word'
+          }}
+        >
+          {model.id}
+        </Typography.Text>
+        
+        {/* 标签组 */}
+        <div style={{ marginBottom: 10, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {showEndpoint && (
+            <Tag 
+              color={pricing?.quotaType === 1 ? 'orange' : 'blue'} 
+              style={{ fontSize: 10, borderRadius: 4 }}
+            >
+              {getBillingType()}
+            </Tag>
+          )}
+          <Tag color="success" style={{ fontSize: 10, borderRadius: 4 }}>
+            可用
+          </Tag>
+        </div>
+        
+        {/* 价格信息 */}
+        <div style={{ fontSize: 11, color: '#666' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+            <span>输入:</span>
+            <Typography.Text style={{ color: '#1890ff', fontSize: 11, fontWeight: 600 }}>
+              {getModelPrice('input')}
+            </Typography.Text>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: showMultiplier ? 4 : 0 }}>
+            <span>输出:</span>
+            <Typography.Text style={{ color: '#52c41a', fontSize: 11, fontWeight: 600 }}>
+              {getModelPrice('output')}
+            </Typography.Text>
+          </div>
+          {showMultiplier && (
+            <div style={{ paddingTop: 6, borderTop: '1px solid #f0f0f0' }}>
+              <Typography.Text strong style={{ fontSize: 10, color: '#666', display: 'block', textAlign: 'center' }}>
+                {getMultiplier()}
+              </Typography.Text>
+            </div>
+          )}
+        </div>
+      </Card>
+    </List.Item>
+  )
+})
+
+EnhancedModelCard.displayName = 'EnhancedModelCard'
+
+// 令牌卡片组件
+const TokenCard = memo(({ token, onEdit, onDelete }) => {
+  const [keyVisible, setKeyVisible] = useState(false)
+  const fullKey = `sk-${token.key}`
+  const displayKey = keyVisible ? fullKey : `${fullKey.slice(0, 12)}...${fullKey.slice(-8)}`
+  
+  const copyKey = () => {
+    navigator.clipboard.writeText(fullKey).then(() => {
+      message.success('令牌已复制')
+    }).catch(() => {
+      message.error('复制失败')
+    })
+  }
+  
+  return (
+    <List.Item>
+      <Card
+        hoverable
+        style={{
+          borderRadius: 12,
+          border: '1px solid #e8e8e8',
+          transition: 'all 0.3s ease'
+        }}
+        bodyStyle={{ padding: 16 }}
+      >
+        {/* 顶部：名称和状态 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+          <div style={{ flex: 1 }}>
+            <Typography.Title level={5} style={{ margin: 0, marginBottom: 4 }}>
+              {token.name}
+            </Typography.Title>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              ID: {token.id}
+            </Typography.Text>
+          </div>
+          <Tag color={token.status === 1 ? 'success' : 'error'} style={{ marginLeft: 8 }}>
+            {token.status === 1 ? '启用' : '禁用'}
+          </Tag>
+        </div>
+
+        {/* 密钥显示 */}
+        <div style={{ 
+          background: '#f5f5f5', 
+          padding: '8px 12px', 
+          borderRadius: 8,
+          marginBottom: 12,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
+        }}>
+          <Typography.Text 
+            code
+            style={{ 
+              flex: 1,
+              fontFamily: 'monospace',
+              fontSize: '12px',
+              wordBreak: 'break-all'
+            }}
+          >
+            {displayKey}
+          </Typography.Text>
+          <Button
+            type="text"
+            size="small"
+            icon={keyVisible ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+            onClick={() => setKeyVisible(!keyVisible)}
+            style={{ padding: '0 4px' }}
+          />
+          <Button
+            type="text"
+            size="small"
+            icon={<CopyOutlined />}
+            onClick={copyKey}
+            style={{ padding: '0 4px' }}
+          />
+        </div>
+
+        {/* 详细信息 */}
+        <div style={{ marginBottom: 12, fontSize: 13 }}>
+          <div style={{ marginBottom: 4 }}>
+            <span style={{ color: '#666' }}>剩余额度: </span>
+            {token.unlimited_quota ? (
+              <Tag color="gold" style={{ fontSize: 11 }}>无限额度</Tag>
+            ) : (
+              <Typography.Text strong>${(token.remain_quota / 500000).toFixed(2)}</Typography.Text>
+            )}
+          </div>
+          <div style={{ marginBottom: 4 }}>
+            <span style={{ color: '#666' }}>已用额度: </span>
+            <Typography.Text>${(token.used_quota / 500000).toFixed(2)}</Typography.Text>
+          </div>
+          <div style={{ marginBottom: 4 }}>
+            <span style={{ color: '#666' }}>过期时间: </span>
+            {token.expired_time === -1 ? (
+              <Tag color="green" style={{ fontSize: 11 }}>永不过期</Tag>
+            ) : (
+              <Typography.Text>{new Date(token.expired_time * 1000).toLocaleString('zh-CN')}</Typography.Text>
+            )}
+          </div>
+          <div>
+            <span style={{ color: '#666' }}>分组: </span>
+            {token.group && token.group !== '' ? (
+              <Tag color="blue" style={{ fontSize: 11 }}>{token.group}</Tag>
+            ) : (
+              <Tag color="default" style={{ fontSize: 11 }}>default</Tag>
+            )}
+          </div>
+        </div>
+
+        {/* 创建时间 */}
+        <div style={{ 
+          paddingTop: 12, 
+          borderTop: '1px solid #f0f0f0',
+          fontSize: 12,
+          color: '#999',
+          marginBottom: 12
+        }}>
+          创建时间: {new Date(token.created_time * 1000).toLocaleString('zh-CN')}
+        </div>
+
+        {/* 操作按钮 */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button
+            type="primary"
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => onEdit(token)}
+            style={{ flex: 1 }}
+          >
+            编辑
+          </Button>
+          <Popconfirm
+            title="确认删除"
+            description="确定要删除这个令牌吗？"
+            onConfirm={() => onDelete(token.id)}
+            okText="确认"
+            cancelText="取消"
+          >
+            <Button
+              danger
+              size="small"
+              icon={<DeleteOutlined />}
+              style={{ flex: 1 }}
+            >
+              删除
+            </Button>
+          </Popconfirm>
+        </div>
+      </Card>
+    </List.Item>
+  )
+})
+
+TokenCard.displayName = 'TokenCard'
+
 const ModelCard = memo(({ model, onCopy }) => (
   <List.Item>
     <Card 

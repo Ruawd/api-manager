@@ -1,4 +1,4 @@
-import { Layout, Menu, message, Modal } from 'antd'
+import { Layout, Menu, message, Modal, Dropdown } from 'antd'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { ApiOutlined, LogoutOutlined, AppstoreOutlined, DownloadOutlined, UploadOutlined } from '@ant-design/icons'
 import { useState, useRef } from 'react'
@@ -17,9 +17,13 @@ export default function App() {
   }
   
   // 导出站点
-  const handleExport = async () => {
+  const handleExport = async (format = 'default') => {
     try {
-      const res = await fetch('/api/exports/sites', {
+      const url = format === 'allapi' 
+        ? '/api/exports/sites?format=allapi' 
+        : '/api/exports/sites'
+      
+      const res = await fetch(url, {
         headers: authHeaders()
       })
       if (!res.ok) {
@@ -30,16 +34,20 @@ export default function App() {
       
       // 创建下载
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-      const url = window.URL.createObjectURL(blob)
+      const downloadUrl = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = url
-      a.download = `sites-export-${new Date().toISOString().slice(0, 10)}.json`
+      a.href = downloadUrl
+      const fileName = format === 'allapi'
+        ? `accounts-backup-${new Date().toISOString().slice(0, 10)}.json`
+        : `sites-export-${new Date().toISOString().slice(0, 10)}.json`
+      a.download = fileName
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
+      window.URL.revokeObjectURL(downloadUrl)
       
-      message.success(`成功导出 ${data.sites?.length || 0} 个站点`)
+      const count = format === 'allapi' ? data.data?.accounts?.length : data.sites?.length
+      message.success(`成功导出 ${count || 0} 个站点`)
     } catch (e) {
       message.error(e.message || '导出站点失败')
     }
@@ -59,14 +67,52 @@ export default function App() {
       const text = await file.text()
       const data = JSON.parse(text)
       
-      if (!data.sites || !Array.isArray(data.sites)) {
-        throw new Error('无效的导入文件格式')
+      // 检测文件格式并验证
+      let sites = []
+      let formatType = ''
+      
+      if (data.data && data.data.accounts && Array.isArray(data.data.accounts)) {
+        // 新格式：accounts-backup格式
+        sites = data.data.accounts
+        formatType = 'accounts-backup'
+        
+        // 验证新格式必要字段
+        const invalidSites = sites.filter(site => 
+          !site.site_name || !site.site_url || !site.account_info?.access_token
+        )
+        if (invalidSites.length > 0) {
+          throw new Error(`发现 ${invalidSites.length} 个无效的站点记录（缺少必要字段）`)
+        }
+      } else if (data.sites && Array.isArray(data.sites)) {
+        // 原格式：标准导出格式
+        sites = data.sites
+        formatType = 'standard'
+        
+        // 验证原格式必要字段
+        const invalidSites = sites.filter(site => 
+          !site.name || !site.baseUrl || !site.apiKey
+        )
+        if (invalidSites.length > 0) {
+          throw new Error(`发现 ${invalidSites.length} 个无效的站点记录（缺少必要字段）`)
+        }
+      } else {
+        throw new Error('无效的导入文件格式，请选择正确的站点配置文件')
+      }
+      
+      if (sites.length === 0) {
+        throw new Error('文件中没有找到可导入的站点数据')
       }
       
       // 确认导入
       Modal.confirm({
         title: '确认导入站点',
-        content: `将导入 ${data.sites.length} 个站点，是否继续？`,
+        content: (
+          <div>
+            <p>将导入 <strong>{sites.length}</strong> 个站点</p>
+            <p>文件格式: <strong>{formatType === 'accounts-backup' ? '账户备份格式' : '标准导出格式'}</strong></p>
+            <p>是否继续？</p>
+          </div>
+        ),
         okText: '确认导入',
         cancelText: '取消',
         onOk: async () => {
@@ -82,7 +128,20 @@ export default function App() {
           }
           
           const result = await res.json()
-          message.success(`成功导入 ${result.imported || 0} 个站点`)
+          
+          // 构建成功消息
+          const parts = []
+          if (result.imported > 0) parts.push(`新增 ${result.imported} 个`)
+          if (result.updated > 0) parts.push(`更新 ${result.updated} 个`)
+          const successMsg = parts.length > 0 ? `成功${parts.join('，')}站点` : '未导入任何站点'
+          const formatMsg = result.format ? `（${result.format === 'accounts-backup' ? '账户备份格式' : '标准格式'}）` : ''
+          message.success(successMsg + formatMsg)
+          
+          // 显示错误信息（如果有）
+          if (result.errors && result.errors.length > 0) {
+            console.warn('导入错误:', result.errors)
+            message.warning(`部分站点导入失败，请查看控制台了解详情`)
+          }
           
           // 刷新页面
           if (loc.pathname === '/') {
@@ -148,8 +207,29 @@ export default function App() {
             {
               key: 'export',
               icon: <DownloadOutlined />,
-              label: <span className="desktop-only">导出</span>,
-              onClick: handleExport,
+              label: (
+                <Dropdown
+                  menu={{
+                    items: [
+                      {
+                        key: 'default',
+                        label: '导出（原始格式）',
+                        onClick: () => handleExport('default')
+                      },
+                      {
+                        key: 'allapi',
+                        label: '导出（All-API-Hub格式）',
+                        onClick: () => handleExport('allapi')
+                      }
+                    ]
+                  }}
+                  trigger={['click']}
+                >
+                  <span className="desktop-only" onClick={(e) => e.stopPropagation()}>
+                    导出
+                  </span>
+                </Dropdown>
+              ),
               title: '导出站点'
             },
             {

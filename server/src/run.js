@@ -844,6 +844,9 @@ async function checkSite(site, fastify, options = {}) {
   } catch (e) {
     // 请求失败时创建错误快照用于调试，但不用于对比（有 errorMessage）
     const now = new Date();
+    
+    console.log(`[ERROR-SNAPSHOT] 检测失败，创建错误快照 - billingLimit: ${billingLimit}, billingUsage: ${billingUsage}, billingError: ${billingError}`);
+    
     await prisma.modelSnapshot.create({
       data: {
         siteId: site.id,
@@ -853,7 +856,11 @@ async function checkSite(site, fastify, options = {}) {
         rawResponse: e.rawResponse,
         errorMessage: e.errorMessage || e.error?.message || String(e),
         statusCode: e.statusCode,
-        responseTime: e.responseTime
+        responseTime: e.responseTime,
+        // 即使模型检测失败，也保存billing信息（如果有的话）
+        billingLimit,
+        billingUsage,
+        billingError
       }
     });
     await prisma.site.update({ 
@@ -884,6 +891,8 @@ async function checkSite(site, fastify, options = {}) {
   let hasChanges = false;
   
   // 每次检测都创建快照（不管是否有变更），这样"请求详情"能显示最新结果
+  console.log(`[SNAPSHOT] 准备保存快照 - billingLimit: ${billingLimit}, billingUsage: ${billingUsage}, billingError: ${billingError}`);
+  
   const snap = await prisma.modelSnapshot.create({
     data: {
       siteId: site.id,
@@ -903,6 +912,8 @@ async function checkSite(site, fastify, options = {}) {
       checkInError
     }
   });
+  
+  console.log(`[SNAPSHOT] 快照已保存 - ID: ${snap.id}, billing数据已包含`);
   
   // 检查是否有变更
   if (lastSnap && lastSnap.hash !== hash) {
