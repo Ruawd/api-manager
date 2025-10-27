@@ -140,13 +140,32 @@ export default function MobileSiteCard({
     >
       {/* 内容区域 */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* 头部：名称和URL在同一行 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flex: 1 }}>
+        {/* 头部：名称、令牌按钮和URL在同一行 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
             <Typography.Text strong style={{ fontSize: 15, whiteSpace: 'nowrap' }}>
               {site.name}
             </Typography.Text>
             {site.pinned && <PushpinFilled style={{ color: '#fa8c16', fontSize: 12 }} />}
+            <Tooltip title="查看API令牌">
+              <Button
+                type="text"
+                size="small"
+                icon={<KeyOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onShowApiToken(site)
+                }}
+                style={{ 
+                  padding: '2px 4px', 
+                  height: 20, 
+                  fontSize: 11,
+                  color: '#722ed1',
+                  border: '1px solid #d3adf7',
+                  borderRadius: 4
+                }}
+              />
+            </Tooltip>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <Typography.Link 
@@ -156,7 +175,7 @@ export default function MobileSiteCard({
               style={{ 
                 fontSize: 11, 
                 color: '#999',
-                maxWidth: isMobile ? '120px' : '180px',
+                maxWidth: isMobile ? '100px' : '140px',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap'
@@ -382,7 +401,7 @@ export default function MobileSiteCard({
       {/* 操作按钮 */}
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(7, 1fr)', 
+        gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', 
         gap: isMobile ? 6 : 5 
       }}>
         <Button
@@ -403,15 +422,6 @@ export default function MobileSiteCard({
           style={{ fontSize: 12, padding: '4px 6px', height: 32, color: '#52c41a', borderColor: '#52c41a' }}
         >
           检测
-        </Button>
-        <Button
-          icon={<KeyOutlined />}
-          onClick={() => onShowApiToken(site)}
-          block
-          size="small"
-          style={{ fontSize: 12, padding: '4px 6px', height: 32, color: '#722ed1', borderColor: '#722ed1' }}
-        >
-          令牌
         </Button>
         <Button
           icon={<BugOutlined />}
