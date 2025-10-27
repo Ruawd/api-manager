@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback, memo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Collapse, List, Space, Tag, Typography, message, Button, Row, Col, Statistic, Empty, Modal, Form, Input, Switch, Select, Table, Popconfirm, InputNumber, DatePicker } from 'antd'
+import { Card, Collapse, List, Space, Tag, Typography, message, Button, Row, Col, Statistic, Empty, Modal, Form, Input, Switch, Select, Table, Popconfirm, InputNumber, DatePicker, Drawer } from 'antd'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { 
   ThunderboltOutlined, 
   PlusCircleOutlined, 
@@ -28,6 +29,7 @@ function authHeaders(includeJson = false) {
 export default function SiteDetail() {
   const { id } = useParams()
   const nav = useNavigate()
+  const isMobile = useIsMobile(768)
   const [diffs, setDiffs] = useState([])
   const [snapshot, setSnapshot] = useState([])
   const [loading, setLoading] = useState(false)
@@ -808,22 +810,157 @@ export default function SiteDetail() {
         )}
       </Card>
 
-      {/* 令牌管理弹窗 */}
-      <Modal
-        title={<Typography.Title level={4} style={{ margin: 0 }}>令牌管理</Typography.Title>}
-        open={tokenModalVisible}
-        onCancel={() => setTokenModalVisible(false)}
-        footer={null}
-        width={1200}
-        style={{ top: 20 }}
-      >
-        <Table
-          dataSource={tokens}
-          loading={tokenLoading}
-          rowKey="id"
-          pagination={false}
-          scroll={{ x: 1000 }}
-          columns={[
+      {/* 令牌管理弹窗 - 移动端使用Drawer */}
+      {isMobile ? (
+        <Drawer
+          title={<Typography.Title level={4} style={{ margin: 0 }}>令牌管理</Typography.Title>}
+          open={tokenModalVisible}
+          onClose={() => setTokenModalVisible(false)}
+          placement="bottom"
+          height="90%"
+        >
+          <Table
+            dataSource={tokens}
+            loading={tokenLoading}
+            rowKey="id"
+            pagination={false}
+            scroll={{ x: 800 }}
+            size="small"
+            columns={[
+            {
+              title: 'ID',
+              dataIndex: 'id',
+              width: 60,
+              fixed: 'left'
+            },
+            {
+              title: '名称',
+              dataIndex: 'name',
+              width: 120,
+              ellipsis: true
+            },
+            {
+              title: '令牌',
+              dataIndex: 'key',
+              width: 400,
+              render: (key) => {
+                const fullKey = `sk-${key}`
+                return (
+                  <Typography.Text 
+                    code
+                    copyable
+                    style={{ 
+                      fontFamily: 'monospace',
+                      fontSize: '12px',
+                      wordBreak: 'break-all'
+                    }}
+                  >
+                    {fullKey}
+                  </Typography.Text>
+                )
+              }
+            },
+            {
+              title: '分组',
+              dataIndex: 'group',
+              width: 100,
+              render: (group) => {
+                if (!group || group === '') {
+                  return <Tag color="default">用户分组</Tag>
+                }
+                return <Tag color="blue">{group}</Tag>
+              }
+            },
+            {
+              title: '过期时间',
+              dataIndex: 'expired_time',
+              width: 150,
+              render: (time) => time === -1 ? <Tag color="green">永不过期</Tag> : new Date(time * 1000).toLocaleString('zh-CN')
+            },
+            {
+              title: '额度',
+              dataIndex: 'remain_quota',
+              width: 120,
+              render: (quota, record) => record.unlimited_quota 
+                ? <Tag className="tag-unlimited">无限额</Tag> 
+                : (quota / 500000).toFixed(2) + ' $'
+            },
+            {
+              title: '已使用',
+              dataIndex: 'used_quota',
+              width: 120,
+              render: (quota) => (quota / 500000).toFixed(2) + ' $'
+            },
+            {
+              title: '状态',
+              dataIndex: 'status',
+              width: 80,
+              render: (status) => status === 1 ? <Tag color="success">启用</Tag> : <Tag color="error">禁用</Tag>
+            },
+            {
+              title: '创建时间',
+              dataIndex: 'created_time',
+              width: 150,
+              render: (time) => new Date(time * 1000).toLocaleString('zh-CN')
+            },
+            {
+              title: '最后访问',
+              dataIndex: 'accessed_time',
+              width: 150,
+              render: (time) => time ? new Date(time * 1000).toLocaleString('zh-CN') : '-'
+            },
+            {
+              title: '操作',
+              key: 'actions',
+              width: 120,
+              fixed: 'right',
+              render: (_, record) => (
+                <Space>
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={() => openEditModal(record)}
+                  >
+                    编辑
+                  </Button>
+                  <Popconfirm
+                    title="确认删除"
+                    description="确定要删除这个令牌吗？"
+                    onConfirm={() => deleteToken(record.id)}
+                    okText="确认"
+                    cancelText="取消"
+                  >
+                    <Button
+                      danger
+                      size="small"
+                      icon={<DeleteOutlined />}
+                    >
+                      删除
+                    </Button>
+                  </Popconfirm>
+                </Space>
+              )
+            }
+          ]}
+          />
+        </Drawer>
+      ) : (
+        <Modal
+          title={<Typography.Title level={4} style={{ margin: 0 }}>令牌管理</Typography.Title>}
+          open={tokenModalVisible}
+          onCancel={() => setTokenModalVisible(false)}
+          footer={null}
+          width={1200}
+          style={{ top: 20 }}
+        >
+          <Table
+            dataSource={tokens}
+            loading={tokenLoading}
+            rowKey="id"
+            pagination={false}
+            scroll={{ x: 1000 }}
+            columns={[
             {
               title: 'ID',
               dataIndex: 'id',
@@ -941,7 +1078,8 @@ export default function SiteDetail() {
             }
           ]}
         />
-      </Modal>
+        </Modal>
+      )}
 
       {/* 令牌编辑弹窗 */}
       <Modal
