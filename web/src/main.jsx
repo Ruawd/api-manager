@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import App from './pages/App'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import Sites from './pages/Sites'
 import SiteDetail from './pages/SiteDetail'
 import 'antd/dist/reset.css'
@@ -19,6 +20,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/" element={<RequireAuth><App /></RequireAuth>}>
           <Route index element={<Sites />} />
           <Route path="sites/:id" element={<SiteDetail />} />

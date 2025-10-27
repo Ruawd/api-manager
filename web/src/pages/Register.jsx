@@ -1,29 +1,35 @@
 import { useState } from 'react'
 import { Button, Card, Form, Input, Typography, message } from 'antd'
 import { useNavigate, Link } from 'react-router-dom'
-import { UserOutlined, LockOutlined, ApiOutlined } from '@ant-design/icons'
+import { UserOutlined, LockOutlined, ApiOutlined, MailOutlined } from '@ant-design/icons'
 
-export default function Login() {
+export default function Register() {
   const [loading, setLoading] = useState(false)
   const nav = useNavigate()
+  
   const onFinish = async (values) => {
     setLoading(true)
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values)
+      const res = await fetch('/api/auth/register', {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(values)
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || '登录失败')
+        throw new Error(data.error || '注册失败')
       }
       const data = await res.json()
       localStorage.setItem('token', data.token)
-      message.success('登录成功，欢迎回来！')
+      message.success('注册成功，欢迎使用！')
       nav('/')
     } catch (e) {
-      message.error(e.message || '登录失败，请检查邮箱和密码')
-    } finally { setLoading(false) }
+      message.error(e.message || '注册失败，请重试')
+    } finally { 
+      setLoading(false) 
+    }
   }
+
   return (
     <div style={{ 
       height: '100vh', 
@@ -54,12 +60,13 @@ export default function Login() {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
           }}>
-            API管理系统
+            注册账号
           </Typography.Title>
           <Typography.Text type="secondary" style={{ fontSize: 15 }}>
-            登录以管理您的 API 管理系统
+            创建新账号开始使用 API管理系统
           </Typography.Text>
         </div>
+        
         <Form layout="vertical" onFinish={onFinish} size="large">
           <Form.Item 
             name="email" 
@@ -70,22 +77,50 @@ export default function Login() {
             ]}
           >
             <Input 
-              prefix={<UserOutlined style={{ color: '#bbb' }} />}
+              prefix={<MailOutlined style={{ color: '#bbb' }} />}
               placeholder="请输入邮箱" 
               style={{ borderRadius: 8, fontSize: 15 }}
             />
           </Form.Item>
+          
           <Form.Item 
             name="password" 
-            label={<span style={{ fontSize: 15, fontWeight: 500 }}>登录密码</span>}
-            rules={[{ required: true, message: '请输入密码' }]}
+            label={<span style={{ fontSize: 15, fontWeight: 500 }}>密码</span>}
+            rules={[
+              { required: true, message: '请输入密码' },
+              { min: 6, message: '密码长度至少为6位' }
+            ]}
           >
             <Input.Password 
               prefix={<LockOutlined style={{ color: '#bbb' }} />}
-              placeholder="请输入密码" 
+              placeholder="请输入密码（至少6位）" 
               style={{ borderRadius: 8, fontSize: 15 }}
             />
           </Form.Item>
+          
+          <Form.Item 
+            name="confirmPassword" 
+            label={<span style={{ fontSize: 15, fontWeight: 500 }}>确认密码</span>}
+            dependencies={['password']}
+            rules={[
+              { required: true, message: '请确认密码' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('password') === value) {
+                    return Promise.resolve()
+                  }
+                  return Promise.reject(new Error('两次输入的密码不一致'))
+                },
+              }),
+            ]}
+          >
+            <Input.Password 
+              prefix={<LockOutlined style={{ color: '#bbb' }} />}
+              placeholder="请再次输入密码" 
+              style={{ borderRadius: 8, fontSize: 15 }}
+            />
+          </Form.Item>
+          
           <Button 
             type="primary" 
             htmlType="submit" 
@@ -101,7 +136,7 @@ export default function Login() {
               border: 'none'
             }}
           >
-            {loading ? '登录中...' : '立即登录'}
+            {loading ? '注册中...' : '注册账号'}
           </Button>
           
           <div style={{ 
@@ -110,17 +145,17 @@ export default function Login() {
             fontSize: 14
           }}>
             <Typography.Text type="secondary">
-              还没有账号？
+              已有账号？
             </Typography.Text>
             <Link 
-              to="/register" 
+              to="/login" 
               style={{ 
                 marginLeft: 8,
                 color: '#1890ff',
                 fontWeight: 500
               }}
             >
-              立即注册
+              立即登录
             </Link>
           </div>
         </Form>
@@ -128,3 +163,4 @@ export default function Login() {
     </div>
   )
 }
+

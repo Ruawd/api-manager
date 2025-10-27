@@ -30,6 +30,50 @@ const authPlugin = fp(async function (fastify) {
     },
   });
 
+  // 注册接口
+  fastify.post('/api/auth/register', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['email', 'password'],
+        properties: {
+          email: { type: 'string', format: 'email' },
+          password: { type: 'string', minLength: 6 },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { email, password } = request.body;
+    
+    // 检查邮箱是否已存在
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return reply.code(400).send({ error: '该邮箱已被注册' });
+    }
+    
+    // 密码长度检查
+    if (password.length < 6) {
+      return reply.code(400).send({ error: '密码长度至少为6位' });
+    }
+    
+    // 创建新用户
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: { 
+        email, 
+        passwordHash, 
+        isAdmin: false // 注册的用户默认不是管理员
+      },
+    });
+    
+    // 生成token
+    const token = fastify.jwt.sign({ sub: user.id, email: user.email, isAdmin: user.isAdmin }, { expiresIn: '7d' });
+    
+    fastify.log.info({ email }, '新用户注册成功');
+    return { token, message: '注册成功' };
+  });
+
+  // 登录接口
   fastify.post('/api/auth/login', {
     schema: {
       body: {
