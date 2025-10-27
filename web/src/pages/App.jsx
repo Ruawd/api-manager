@@ -120,7 +120,7 @@ export default function App() {
           WebkitTextFillColor: 'transparent'
         }}>
           <ApiOutlined style={{ fontSize: 28, color: '#1890ff' }} />
-          API 聚合监控管理系统
+          API管理系统
         </div>
         <Menu 
           mode="horizontal" 

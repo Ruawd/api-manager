@@ -54,7 +54,7 @@ export default function Login() {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
           }}>
-            API 聚合监控管理系统
+            API管理系统
           </Typography.Title>
           <Typography.Text type="secondary" style={{ fontSize: 15 }}>
             登录以管理您的 API 管理系统
