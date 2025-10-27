@@ -67,38 +67,32 @@
 
 ### 🐳 Docker 部署
 
-**1. 快速启动（使用默认配置）**
+**1. 快速启动**
 
 ```bash
 docker run -d \
-  --name api-monitor \
+  --name api-manager \
   -p 3006:3006 \
-  -v api-monitor-data:/app/data \
-  ghcr.io/jwy87/SimpleHub:latest
+  -v api-manager-data:/app/data \
+  ghcr.io/ruawd/api-manager:latest
 ```
 
-**2. 自定义管理员账号（推荐）**
-
-```bash
-docker run -d \
-  --name api-monitor \
-  -p 3006:3006 \
-  -e ADMIN_EMAIL=your-email@example.com \
-  -e ADMIN_PASSWORD=your-secure-password \
-  -v api-monitor-data:/app/data \
-  ghcr.io/jwy87/SimpleHub:latest
-```
-
-**3. 访问应用**
+**2. 访问应用**
 
 打开浏览器访问 `http://localhost:3006`
 
-默认管理员账号（如未自定义）：
-- 邮箱：`admin@example.com`
-- 密码：`admin123456`
+**3. 注册账号**
 
-> ⚠️ **重要提示**：
-> - 系统暂不支持修改密码功能，请在首次部署时通过环境变量设置好管理员账号
+首次访问时：
+1. 点击"立即注册"
+2. 输入邮箱和密码（至少6位）
+3. 第一个注册的用户将自动成为管理员
+4. 注册成功后自动登录
+
+> 💡 **提示**：
+> - 第一个注册的用户将获得管理员权限
+> - 后续注册的用户为普通用户
+> - 无需设置环境变量配置账号
 
 ---
 
@@ -110,33 +104,26 @@ docker run -d \
 version: '3.8'
 
 services:
-  api-monitor:
-    image: ghcr.io/jwy87/SimpleHub:latest
-    container_name: api-monitor
+  api-manager:
+    image: ghcr.io/ruawd/api-manager:latest
+    container_name: api-manager
     ports:
       - "3006:3006"
-    environment:
-      - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@example.com}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123456}
     volumes:
-      - api-monitor-data:/app/data
+      - api-manager-data:/app/data
     restart: unless-stopped
 
 volumes:
-  api-monitor-data:
+  api-manager-data:
 ```
 
 **2. 启动服务**
 
 ```bash
-# 使用默认配置
-docker-compose up -d
-
-# 或自定义管理员账号
-ADMIN_EMAIL=your-email@example.com \
-ADMIN_PASSWORD=your-secure-password \
 docker-compose up -d
 ```
+
+启动后访问 `http://localhost:3006` 进行注册
 
 ---
 
@@ -345,32 +332,33 @@ docker run --rm \
 ### 账号安全
 
 <details>
-<summary><b>忘记管理员密码怎么办？</b></summary>
+<summary><b>忘记密码怎么办？</b></summary>
 
-由于系统暂不支持修改密码功能，如果忘记密码，需要：
+由于系统暂不支持修改密码和找回密码功能，如果忘记密码：
 
-1. 停止并删除容器
-2. 删除数据卷（会清空所有数据）
-3. 使用新的管理员账号重新部署
+**方案1：使用其他账号登录**
+- 如果有其他注册的账号，可以使用其他账号登录
+
+**方案2：重置数据库（会丢失所有数据）**
 
 ```bash
 # 停止并删除容器
-docker stop api-monitor && docker rm api-monitor
+docker stop api-manager && docker rm api-manager
 
 # 删除数据卷
-docker volume rm api-monitor-data
+docker volume rm api-manager-data
 
-# 重新部署
+# 重新启动
 docker run -d \
-  --name api-monitor \
+  --name api-manager \
   -p 3006:3006 \
-  -e ADMIN_EMAIL=new-email@example.com \
-  -e ADMIN_PASSWORD=new-password \
-  -v api-monitor-data:/app/data \
-  ghcr.io/jwy87/SimpleHub:latest
+  -v api-manager-data:/app/data \
+  ghcr.io/ruawd/api-manager:latest
 ```
 
-**建议**：部署前请妥善保管管理员账号密码
+然后重新注册账号即可。
+
+**建议**：请妥善保管账号密码
 
 </details>
 

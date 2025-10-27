@@ -15,8 +15,6 @@ const DEFAULT_JWT_SECRET = 'ai-monitor-default-jwt-secret-key-for-development';
 const CONFIG = {
   PORT: parseInt(env('PORT', '3006'), 10),
   JWT_SECRET: env('JWT_SECRET', DEFAULT_JWT_SECRET),
-  ADMIN_EMAIL: env('ADMIN_EMAIL', 'admin@example.com'),
-  ADMIN_PASSWORD: env('ADMIN_PASSWORD', 'admin123456'),
   ENCRYPTION_KEY: env('ENCRYPTION_KEY', DEFAULT_ENCRYPTION_KEY),
   DATABASE_URL: env('DATABASE_URL', `file:${path.join(process.cwd(), 'data', 'db.sqlite')}`),
   NODE_ENV: env('NODE_ENV', 'development'),
@@ -31,10 +29,6 @@ if (CONFIG.NODE_ENV === 'production') {
   if (CONFIG.ENCRYPTION_KEY === DEFAULT_ENCRYPTION_KEY) {
     console.warn('\n⚠️  警告: 正在使用默认的 ENCRYPTION_KEY，这在生产环境中不安全！');
     console.warn('   请设置环境变量 ENCRYPTION_KEY 为一个32字符的强随机字符串\n');
-  }
-  if (CONFIG.ADMIN_EMAIL === 'admin@example.com' || CONFIG.ADMIN_PASSWORD === 'admin123456') {
-    console.warn('\n⚠️  警告: 正在使用默认的管理员账号密码，这在生产环境中不安全！');
-    console.warn('   请设置环境变量 ADMIN_EMAIL 和 ADMIN_PASSWORD\n');
   }
 }
 

@@ -3,20 +3,6 @@ const fp = require('fastify-plugin');
 const { prisma } = require('./db');
 const { CONFIG } = require('./config');
 
-async function bootstrapAdmin(fastify) {
-  const count = await prisma.user.count();
-  if (count > 0) return;
-  if (!CONFIG.ADMIN_EMAIL || !CONFIG.ADMIN_PASSWORD) {
-    fastify.log.warn('没有用户且未设置 ADMIN_EMAIL/ADMIN_PASSWORD 环境变量，无法创建管理员账户');
-    return;
-  }
-  const passwordHash = await bcrypt.hash(CONFIG.ADMIN_PASSWORD, 10);
-  await prisma.user.create({
-    data: { email: CONFIG.ADMIN_EMAIL, passwordHash, isAdmin: true },
-  });
-  fastify.log.info('已从环境变量创建管理员账户');
-}
-
 const authPlugin = fp(async function (fastify) {
   await fastify.register(require('@fastify/jwt'), { secret: CONFIG.JWT_SECRET });
 
@@ -56,21 +42,30 @@ const authPlugin = fp(async function (fastify) {
       return reply.code(400).send({ error: '密码长度至少为6位' });
     }
     
+    // 检查是否是第一个用户，第一个用户自动成为管理员
+    const userCount = await prisma.user.count();
+    const isFirstUser = userCount === 0;
+    
     // 创建新用户
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: { 
         email, 
         passwordHash, 
-        isAdmin: false // 注册的用户默认不是管理员
+        isAdmin: isFirstUser // 第一个注册的用户自动成为管理员
       },
     });
     
     // 生成token
     const token = fastify.jwt.sign({ sub: user.id, email: user.email, isAdmin: user.isAdmin }, { expiresIn: '7d' });
     
-    fastify.log.info({ email }, '新用户注册成功');
-    return { token, message: '注册成功' };
+    if (isFirstUser) {
+      fastify.log.info({ email }, '首位用户注册成功，已设置为管理员');
+    } else {
+      fastify.log.info({ email }, '新用户注册成功');
+    }
+    
+    return { token, message: isFirstUser ? '注册成功！您是第一位用户，已获得管理员权限' : '注册成功' };
   });
 
   // 登录接口
@@ -94,8 +89,6 @@ const authPlugin = fp(async function (fastify) {
     const token = fastify.jwt.sign({ sub: user.id, email: user.email, isAdmin: user.isAdmin }, { expiresIn: '7d' });
     return { token };
   });
-
-  await bootstrapAdmin(fastify);
 });
 
 module.exports = { authPlugin };

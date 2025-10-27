@@ -35,7 +35,9 @@ RUN apt-get update && \
 # Set production environment
 ENV NODE_ENV=production \
     PORT=3006 \
-    DATABASE_URL="file:/app/data/db.sqlite"
+    DATABASE_URL="file:/app/data/db.sqlite" \
+    JWT_SECRET="production-jwt-secret-please-change-in-production" \
+    ENCRYPTION_KEY="production-encryption-key-32ch"
 
 # Create non-root user and data directory
 RUN useradd -m -d /app -s /bin/bash appuser && \

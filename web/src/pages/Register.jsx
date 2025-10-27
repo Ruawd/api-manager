@@ -65,6 +65,17 @@ export default function Register() {
           <Typography.Text type="secondary" style={{ fontSize: 15 }}>
             创建新账号开始使用 API管理系统
           </Typography.Text>
+          <Typography.Text 
+            type="warning" 
+            style={{ 
+              fontSize: 13, 
+              display: 'block',
+              marginTop: 8,
+              color: '#fa8c16'
+            }}
+          >
+            💡 第一个注册的用户将自动成为管理员
+          </Typography.Text>
         </div>
         
         <Form layout="vertical" onFinish={onFinish} size="large">
