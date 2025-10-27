@@ -965,17 +965,21 @@ export default function Sites() {
       const data = await res.json()
       console.log('API令牌响应数据:', data)
       
-      // 处理不同的响应格式
-      if (data.success && Array.isArray(data.data)) {
-        setTokenList(data.data)
-      } else if (Array.isArray(data)) {
-        setTokenList(data)
-      } else if (data.data && Array.isArray(data.data)) {
-        setTokenList(data.data)
+      // 使用与 SiteDetail.jsx 相同的解析逻辑
+      if (data.success && data.data) {
+        // 严格的数组类型检查，确保一定是数组
+        let tokenList = []
+        if (Array.isArray(data.data)) {
+          tokenList = data.data
+        } else if (data.data.items && Array.isArray(data.data.items)) {
+          tokenList = data.data.items
+        } else if (data.data.data && Array.isArray(data.data.data)) {
+          tokenList = data.data.data
+        }
+        console.log('令牌列表加载成功:', tokenList)
+        setTokenList(tokenList)
       } else {
-        console.warn('未识别的响应格式:', data)
-        setTokenError('响应格式不正确，请查看控制台了解详情')
-        setTokenList([])
+        throw new Error(data.message || '获取令牌列表失败')
       }
     } catch (e) {
       console.error('获取令牌列表错误:', e)
@@ -3342,14 +3346,14 @@ export default function Sites() {
                               display: 'block'
                             }}
                           >
-                            {token.key || token.token || token.access_token || '未知令牌'}
+                            sk-{token.key || token.token || token.access_token || '未知令牌'}
                           </Typography.Text>
                         </div>
                         <Button
                           type="primary"
                           size="small"
                           icon={<CopyOutlined />}
-                          onClick={() => copyApiToken(token.key || token.token || token.access_token)}
+                          onClick={() => copyApiToken('sk-' + (token.key || token.token || token.access_token))}
                           style={{ marginLeft: 8 }}
                         >
                           复制
