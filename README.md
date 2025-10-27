@@ -4,7 +4,12 @@
 
 <p>统一管理多个 API 站点，支持自动签到、余额监控和智能通知</p>
 
+[![GitHub stars](https://img.shields.io/github/stars/Ruawd/api-manager?style=social)](https://github.com/Ruawd/api-manager)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 </div>
+
+> 📢 **项目说明**：本项目是基于 [jwy87/SimpleHub](https://github.com/jwy87/SimpleHub) 的二改自用项目，在原项目基础上进行了大量功能增强和界面优化。感谢原作者的开源贡献！
 
 ---
 
@@ -60,25 +65,35 @@
 
 ## 🚀 快速开始
 
-### 🐳 Docker 部署
+### 📦 推荐方式：从源码构建部署
 
-**1. 快速启动**
+由于这是个人二改项目，建议直接从源码构建：
+
+**1. 克隆仓库**
 
 ```bash
+git clone https://github.com/Ruawd/api-manager.git
+cd api-manager
+```
+
+**2. 构建并启动**
+
+```bash
+# 使用 Docker Compose 一键启动
+docker-compose up -d
+
+# 或手动构建
+docker build -t api-manager:latest .
 docker run -d \
   --name api-manager \
   -p 3006:3006 \
   -v api-manager-data:/app/data \
-  your-username/api-manager:latest
+  api-manager:latest
 ```
 
-> 💡 **提示**：请将 `your-username` 替换为你的 Docker Hub 用户名，或使用 GitHub Container Registry：`ghcr.io/your-username/api-manager:latest`
-
-**2. 访问应用**
+**3. 访问并注册**
 
 打开浏览器访问 `http://localhost:3006`
-
-**3. 注册账号**
 
 首次访问时：
 1. 点击"立即注册"
@@ -88,36 +103,52 @@ docker run -d \
 
 > 💡 **提示**：
 > - 第一个注册的用户将获得管理员权限
-> - 后续注册的用户为普通用户
+> - 后续注册的用户为普通用户，数据完全隔离
 > - 无需设置环境变量配置账号
 
 ---
 
-### 📋 Docker Compose
+### 📋 Docker Compose 配置
 
-**1. 创建 docker-compose.yml**
+仓库已包含 `docker-compose.yml` 文件，可直接使用：
 
 ```yaml
 version: '3.8'
 
 services:
   api-manager:
-    image: your-username/api-manager:latest
+    build: .
     container_name: api-manager
     ports:
       - "3006:3006"
     volumes:
       - api-manager-data:/app/data
     restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3006
+      # 可选：自定义加密密钥（生产环境建议修改）
+      # - JWT_SECRET=your-custom-jwt-secret
+      # - ENCRYPTION_KEY=your-32-character-encryption-key
 
 volumes:
   api-manager-data:
 ```
 
-**2. 启动服务**
+**启动/停止服务**
 
 ```bash
+# 启动
 docker-compose up -d
+
+# 查看日志
+docker-compose logs -f
+
+# 停止
+docker-compose down
+
+# 重新构建并启动
+docker-compose up -d --build
 ```
 
 启动后访问 `http://localhost:3006` 进行注册
@@ -363,15 +394,19 @@ docker stop api-manager && docker rm api-manager
 # 删除数据卷
 docker volume rm api-manager-data
 
-# 重新启动
+# 重新构建并启动（如果使用docker-compose）
+docker-compose up -d
+
+# 或手动启动
+docker build -t api-manager:latest .
 docker run -d \
   --name api-manager \
   -p 3006:3006 \
   -v api-manager-data:/app/data \
-  your-username/api-manager:latest
+  api-manager:latest
 ```
 
-然后重新注册账号即可。
+然后重新访问 `http://localhost:3006` 注册账号即可。
 
 **建议**：请妥善保管账号密码
 
@@ -506,13 +541,34 @@ MIT License
 
 ## 🤖 关于本项目
 
-本项目是基于原项目的增强版本，主要改进包括：
-- ✅ iOS 风格界面设计
-- ✅ 完整的移动端适配
-- ✅ 多用户系统和数据隔离
-- ✅ 子站点管理功能
-- ✅ 统一的注册登录系统
-- ✅ 卡片式布局优化
+### 基于原项目的增强
+
+本项目基于 [jwy87/SimpleHub](https://github.com/jwy87/SimpleHub) 进行二次开发，主要增强功能包括：
+
+**界面优化**：
+- ✅ iOS 风格界面设计，更加精美流畅
+- ✅ 完整的移动端适配，支持手机访问
+- ✅ 响应式卡片布局，桌面端3-4列显示
+- ✅ 优化的操作按钮和信息展示
+
+**功能增强**：
+- ✅ 多用户系统，支持独立注册登录
+- ✅ 数据隔离，每个用户拥有独立的站点数据
+- ✅ 子站点管理，方便管理签到站点
+- ✅ 统一的注册登录系统，无需环境变量配置
+- ✅ 项目端口改为 3006，避免与其他服务冲突
+
+**原项目功能保留**：
+- ✅ 多平台 API 监控（NewAPI、Veloera、DoneHub、VOAPI）
+- ✅ 自动签到功能
+- ✅ 模型变更检测
+- ✅ 邮件通知
+- ✅ 定时任务
+- ✅ 分类管理
+
+### 致谢
+
+感谢 [jwy87](https://github.com/jwy87) 开源了 [SimpleHub](https://github.com/jwy87/SimpleHub) 项目，为 API 管理提供了优秀的基础框架！
 
 > **特别说明**：本项目由 AI 辅助开发完成 🤖  
 > 如遇问题或有功能建议，欢迎提交 Issue！
