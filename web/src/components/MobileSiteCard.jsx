@@ -301,7 +301,7 @@ export default function MobileSiteCard({
           </div>
       </div>
 
-        {/* 系统访问密钥（用于登录系统） */}
+        {/* API令牌（用于调用站点AI服务） */}
         {site.apiKey && (
           <div style={{ 
             background: '#f7f7f7', 
@@ -311,7 +311,7 @@ export default function MobileSiteCard({
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 10, color: '#999', marginBottom: 2 }}>系统访问密钥</div>
+                <div style={{ fontSize: 10, color: '#999', marginBottom: 2 }}>API 令牌</div>
                 <Typography.Text 
                   code 
                   style={{ 
