@@ -60,7 +60,9 @@ export default function Sites() {
   
   // API令牌弹窗相关状态
   const [apiTokenModalOpen, setApiTokenModalOpen] = useState(false)
-  const [currentApiToken, setCurrentApiToken] = useState(null)
+  const [currentSite, setCurrentSite] = useState(null)
+  const [tokenList, setTokenList] = useState([])
+  const [loadingTokens, setLoadingTokens] = useState(false)
   
   // 搜索和分类相关状态
   const [searchKeyword, setSearchKeyword] = useState('')
@@ -939,10 +941,38 @@ export default function Sites() {
     })
   }, [])
 
-  // 显示API令牌弹窗
-  const showApiTokenModal = useCallback((site) => {
-    setCurrentApiToken(site)
+  // 显示API令牌弹窗并获取令牌列表
+  const showApiTokenModal = useCallback(async (site) => {
+    setCurrentSite(site)
     setApiTokenModalOpen(true)
+    setLoadingTokens(true)
+    setTokenList([])
+    
+    try {
+      const res = await fetch(`/api/sites/${site.id}/tokens`, {
+        headers: authHeaders()
+      })
+      
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || '获取令牌列表失败')
+      }
+      
+      const data = await res.json()
+      // 处理不同的响应格式
+      if (data.success && Array.isArray(data.data)) {
+        setTokenList(data.data)
+      } else if (Array.isArray(data)) {
+        setTokenList(data)
+      } else {
+        setTokenList([])
+      }
+    } catch (e) {
+      message.error(e.message || '获取令牌列表失败')
+      setTokenList([])
+    } finally {
+      setLoadingTokens(false)
+    }
   }, [])
 
   // 复制API令牌
@@ -3169,32 +3199,21 @@ export default function Sites() {
         </Modal>
       )}
 
-      {/* API令牌弹窗 */}
+      {/* API令牌列表弹窗 */}
       <Modal
         open={apiTokenModalOpen}
         onCancel={() => {
           setApiTokenModalOpen(false)
-          setCurrentApiToken(null)
+          setCurrentSite(null)
+          setTokenList([])
         }}
         footer={[
-          <Button 
-            key="copy" 
-            type="primary" 
-            icon={<CopyOutlined />}
-            onClick={() => {
-              if (currentApiToken?.apiKey) {
-                copyApiToken(currentApiToken.apiKey)
-              }
-            }}
-            style={{ height: 40, fontSize: 15 }}
-          >
-            复制令牌
-          </Button>,
           <Button 
             key="close" 
             onClick={() => {
               setApiTokenModalOpen(false)
-              setCurrentApiToken(null)
+              setCurrentSite(null)
+              setTokenList([])
             }}
             style={{ height: 40, fontSize: 15 }}
           >
@@ -3205,14 +3224,14 @@ export default function Sites() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <KeyOutlined style={{ color: '#722ed1', fontSize: 20 }} />
             <Typography.Title level={4} style={{ margin: 0 }}>
-              API 令牌
+              API 令牌列表
             </Typography.Title>
           </div>
         }
-        width={600}
+        width={700}
         destroyOnClose
       >
-        {currentApiToken && (
+        {currentSite && (
           <div>
             <div style={{ marginBottom: 16 }}>
               <Typography.Text strong style={{ fontSize: 15, display: 'block', marginBottom: 8 }}>
@@ -3226,12 +3245,12 @@ export default function Sites() {
               }}>
                 <div style={{ marginBottom: 6 }}>
                   <Typography.Text type="secondary" style={{ fontSize: 13 }}>名称：</Typography.Text>
-                  <Typography.Text strong style={{ fontSize: 14 }}>{currentApiToken.name}</Typography.Text>
+                  <Typography.Text strong style={{ fontSize: 14 }}>{currentSite.name}</Typography.Text>
                 </div>
                 <div>
                   <Typography.Text type="secondary" style={{ fontSize: 13 }}>地址：</Typography.Text>
-                  <Typography.Link href={currentApiToken.baseUrl} target="_blank" style={{ fontSize: 14 }}>
-                    {currentApiToken.baseUrl}
+                  <Typography.Link href={currentSite.baseUrl} target="_blank" style={{ fontSize: 14 }}>
+                    {currentSite.baseUrl}
                   </Typography.Link>
                 </div>
               </div>
@@ -3239,30 +3258,88 @@ export default function Sites() {
 
             <div style={{ marginBottom: 12 }}>
               <Typography.Text strong style={{ fontSize: 15, display: 'block', marginBottom: 8 }}>
-                API 令牌（API Key）
+                API 令牌 ({loadingTokens ? '加载中...' : `共 ${tokenList.length} 个`})
               </Typography.Text>
-              <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 12 }}>
-                此令牌用于访问该站点的 API 服务，请妥善保管
-              </Typography.Text>
-              <div style={{ 
-                background: '#f0f5ff', 
-                border: '1px solid #adc6ff',
-                padding: 16, 
-                borderRadius: 8,
-                wordBreak: 'break-all'
-              }}>
-                <Typography.Text 
-                  code 
-                  style={{ 
-                    fontSize: 14, 
-                    fontFamily: 'Consolas, Monaco, monospace',
-                    color: '#1890ff',
-                    userSelect: 'all'
-                  }}
-                >
-                  {currentApiToken.apiKey}
-                </Typography.Text>
-              </div>
+              
+              {loadingTokens ? (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <Typography.Text type="secondary">正在加载令牌列表...</Typography.Text>
+                </div>
+              ) : tokenList.length === 0 ? (
+                <div style={{
+                  background: '#fffbe6',
+                  border: '1px solid #ffe58f',
+                  borderRadius: 8,
+                  padding: 16,
+                  textAlign: 'center'
+                }}>
+                  <Typography.Text type="secondary">暂无令牌数据</Typography.Text>
+                </div>
+              ) : (
+                <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+                  {tokenList.map((token, index) => (
+                    <div 
+                      key={token.id || index}
+                      style={{ 
+                        background: '#f0f5ff', 
+                        border: '1px solid #adc6ff',
+                        padding: 12, 
+                        borderRadius: 8,
+                        marginBottom: 8,
+                        wordBreak: 'break-all'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          {token.name && (
+                            <Typography.Text strong style={{ fontSize: 13, display: 'block', marginBottom: 4 }}>
+                              {token.name}
+                            </Typography.Text>
+                          )}
+                          <Typography.Text 
+                            code 
+                            style={{ 
+                              fontSize: 13, 
+                              fontFamily: 'Consolas, Monaco, monospace',
+                              color: '#1890ff',
+                              userSelect: 'all',
+                              display: 'block'
+                            }}
+                          >
+                            {token.key || token.token || token.access_token || '未知令牌'}
+                          </Typography.Text>
+                        </div>
+                        <Button
+                          type="primary"
+                          size="small"
+                          icon={<CopyOutlined />}
+                          onClick={() => copyApiToken(token.key || token.token || token.access_token)}
+                          style={{ marginLeft: 8 }}
+                        >
+                          复制
+                        </Button>
+                      </div>
+                      {(token.status !== undefined || token.expired_time || token.remain_quota !== undefined) && (
+                        <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
+                          {token.status !== undefined && (
+                            <Tag color={token.status === 1 ? 'success' : 'default'} style={{ fontSize: 11, marginRight: 4 }}>
+                              {token.status === 1 ? '启用' : '禁用'}
+                            </Tag>
+                          )}
+                          {token.expired_time && token.expired_time > 0 && (
+                            <span style={{ marginRight: 8 }}>
+                              过期：{new Date(token.expired_time * 1000).toLocaleDateString()}
+                            </span>
+                          )}
+                          {token.remain_quota !== undefined && (
+                            <span>剩余额度：${(token.remain_quota / 500000).toFixed(2)}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div style={{
@@ -3273,7 +3350,7 @@ export default function Sites() {
               marginTop: 16
             }}>
               <Typography.Text style={{ fontSize: 13, color: '#d48806' }}>
-                💡 <strong>提示：</strong>点击上方"复制令牌"按钮可快速复制到剪贴板
+                💡 <strong>提示：</strong>点击每个令牌右侧的"复制"按钮可快速复制到剪贴板
               </Typography.Text>
             </div>
           </div>
