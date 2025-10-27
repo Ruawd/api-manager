@@ -153,7 +153,7 @@ export default function MobileSiteCard({
         display: 'flex', 
         gap: 8, 
         alignItems: 'flex-start',
-        flexWrap: 'wrap',
+        flexWrap: 'nowrap',
         marginBottom: 6
       }}>
           {/* 余额信息 */}
@@ -165,7 +165,8 @@ export default function MobileSiteCard({
               borderRadius: 6,
               padding: '6px 8px',
               fontSize: 10,
-              flex: '0 0 auto'
+              flex: '0 0 auto',
+              minWidth: 'fit-content'
             }}>
               <div style={{ display: 'flex', gap: '4px 12px', flexWrap: 'wrap', alignItems: 'baseline' }}>
                 <span style={{ color: '#888', fontSize: 10, whiteSpace: 'nowrap' }}>
@@ -202,7 +203,15 @@ export default function MobileSiteCard({
           )}
 
           {/* 标签信息 */}
-          <div style={{ flex: '1 1 auto', display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
+          <div style={{ 
+            flex: '1 1 0', 
+            minWidth: 0,
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            gap: 3, 
+            alignItems: 'center',
+            overflow: 'hidden'
+          }}>
             <Tag color="blue" style={{ fontSize: 10, margin: 0, padding: '1px 6px' }}>
               {site.apiType === 'newapi' ? 'NewAPI' : 
                site.apiType === 'veloera' ? 'Veloera' :

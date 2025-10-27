@@ -1451,7 +1451,7 @@ export default function Sites() {
           </Typography.Text>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 380px))',
             gap: 12
           }}>
             {list.map(site => (
@@ -1566,7 +1566,7 @@ export default function Sites() {
                   background: 'white', 
                   borderRadius: '0 0 12px 12px',
                   display: 'grid',
-                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 380px))',
                   gap: 12
                 }}>
                   {list.filter(s => s.pinned).map(site => (
@@ -1732,7 +1732,7 @@ export default function Sites() {
                     background: 'white', 
                     borderRadius: '0 0 12px 12px',
                     display: 'grid',
-                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',
+                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 380px))',
                     gap: 12
                   }}>
                     {categorySites.map(site => (
@@ -1848,7 +1848,7 @@ export default function Sites() {
                   background: 'white', 
                   borderRadius: '0 0 12px 12px',
                   display: 'grid',
-                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(340px, 380px))',
                   gap: 12
                 }}>
                   {list.filter(s => !s.categoryId && !s.pinned).map(site => (
