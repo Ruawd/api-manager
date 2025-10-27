@@ -27,7 +27,12 @@ async function routes(fastify) {
     const sites = await prisma.site.findMany({ 
       where: { ownerId: userId },
       orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
-      include: { category: true }
+      include: { 
+        category: true,
+        subSites: {
+          orderBy: { createdAt: 'asc' }
+        }
+      }
     });
     
     // 为每个站点获取最新的billing信息和模型信息
@@ -526,6 +531,185 @@ async function routes(fastify) {
       fastify.log.error({ error: e.message }, 'Error fetching site');
       reply.code(500);
       return { error: '获取站点信息失败' };
+    }
+  });
+
+  // ===== 子站点管理 API =====
+  
+  // 获取站点的所有子站点
+  fastify.get('/api/sites/:id/subsites', {
+    schema: {
+      params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] }
+    }
+  }, async (request, reply) => {
+    const { id } = request.params;
+    const currentUserId = request.user.sub;
+    
+    try {
+      // 验证站点所有权
+      const site = await prisma.site.findUnique({ where: { id }, select: { ownerId: true } });
+      if (!site) {
+        reply.code(404);
+        return { error: '站点不存在' };
+      }
+      if (site.ownerId !== currentUserId) {
+        reply.code(403);
+        return { error: '无权限访问此站点' };
+      }
+      
+      // 获取子站点列表
+      const subSites = await prisma.subSite.findMany({
+        where: { siteId: id },
+        orderBy: { createdAt: 'asc' }
+      });
+      
+      return subSites;
+    } catch (e) {
+      fastify.log.error({ error: e.message }, 'Error fetching subsites');
+      reply.code(500);
+      return { error: '获取子站点列表失败' };
+    }
+  });
+  
+  // 添加子站点
+  fastify.post('/api/sites/:id/subsites', {
+    schema: {
+      params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+      body: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          url: { type: 'string' }
+        },
+        required: ['name', 'url']
+      }
+    }
+  }, async (request, reply) => {
+    const { id } = request.params;
+    const { name, url } = request.body;
+    const currentUserId = request.user.sub;
+    
+    try {
+      // 验证站点所有权
+      const site = await prisma.site.findUnique({ where: { id }, select: { ownerId: true } });
+      if (!site) {
+        reply.code(404);
+        return { error: '站点不存在' };
+      }
+      if (site.ownerId !== currentUserId) {
+        reply.code(403);
+        return { error: '无权限访问此站点' };
+      }
+      
+      // 创建子站点
+      const subSite = await prisma.subSite.create({
+        data: {
+          siteId: id,
+          name,
+          url
+        }
+      });
+      
+      return subSite;
+    } catch (e) {
+      fastify.log.error({ error: e.message }, 'Error creating subsite');
+      reply.code(500);
+      return { error: '创建子站点失败' };
+    }
+  });
+  
+  // 更新子站点
+  fastify.patch('/api/sites/:siteId/subsites/:subSiteId', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          siteId: { type: 'string' },
+          subSiteId: { type: 'string' }
+        },
+        required: ['siteId', 'subSiteId']
+      },
+      body: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          url: { type: 'string' }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    const { siteId, subSiteId } = request.params;
+    const { name, url } = request.body;
+    const currentUserId = request.user.sub;
+    
+    try {
+      // 验证站点所有权
+      const site = await prisma.site.findUnique({ where: { id: siteId }, select: { ownerId: true } });
+      if (!site) {
+        reply.code(404);
+        return { error: '站点不存在' };
+      }
+      if (site.ownerId !== currentUserId) {
+        reply.code(403);
+        return { error: '无权限访问此站点' };
+      }
+      
+      // 更新子站点
+      const updateData = {};
+      if (name !== undefined) updateData.name = name;
+      if (url !== undefined) updateData.url = url;
+      
+      const subSite = await prisma.subSite.update({
+        where: { id: subSiteId },
+        data: updateData
+      });
+      
+      return subSite;
+    } catch (e) {
+      fastify.log.error({ error: e.message }, 'Error updating subsite');
+      reply.code(500);
+      return { error: '更新子站点失败' };
+    }
+  });
+  
+  // 删除子站点
+  fastify.delete('/api/sites/:siteId/subsites/:subSiteId', {
+    schema: {
+      params: {
+        type: 'object',
+        properties: {
+          siteId: { type: 'string' },
+          subSiteId: { type: 'string' }
+        },
+        required: ['siteId', 'subSiteId']
+      }
+    }
+  }, async (request, reply) => {
+    const { siteId, subSiteId } = request.params;
+    const currentUserId = request.user.sub;
+    
+    try {
+      // 验证站点所有权
+      const site = await prisma.site.findUnique({ where: { id: siteId }, select: { ownerId: true } });
+      if (!site) {
+        reply.code(404);
+        return { error: '站点不存在' };
+      }
+      if (site.ownerId !== currentUserId) {
+        reply.code(403);
+        return { error: '无权限访问此站点' };
+      }
+      
+      // 删除子站点
+      await prisma.subSite.delete({
+        where: { id: subSiteId }
+      });
+      
+      return { success: true };
+    } catch (e) {
+      fastify.log.error({ error: e.message }, 'Error deleting subsite');
+      reply.code(500);
+      return { error: '删除子站点失败' };
     }
   });
 

@@ -49,6 +49,12 @@ export default function SiteDetail() {
   const [redeemCodes, setRedeemCodes] = useState('')
   const [redeemLoading, setRedeemLoading] = useState(false)
   const [redeemResults, setRedeemResults] = useState([])
+  
+  // 子站点相关状态
+  const [subSites, setSubSites] = useState([])
+  const [subSiteModalVisible, setSubSiteModalVisible] = useState(false)
+  const [subSiteForm] = Form.useForm()
+  const [editingSubSite, setEditingSubSite] = useState(null)
 
   const copyToClipboard = useCallback((text, successMsg = '复制成功') => {
     navigator.clipboard.writeText(text).then(() => {
@@ -368,6 +374,16 @@ export default function SiteDetail() {
     } catch (e) { 
       message.error(e.message || '加载模型列表失败，请稍后重试') 
     }
+    // 加载子站点列表
+    try {
+      const subsitesRes = await fetch(`/api/sites/${id}/subsites`, { headers: authHeaders() })
+      if (subsitesRes.ok) {
+        const subsitesData = await subsitesRes.json()
+        setSubSites(subsitesData)
+      }
+    } catch (e) {
+      console.error('加载子站点失败:', e)
+    }
   }
   
   useEffect(() => { 
@@ -386,6 +402,65 @@ export default function SiteDetail() {
     } catch (e) { 
       message.error(e.message || '检测失败，请检查站点配置') 
     } finally { setLoading(false) }
+  }
+  
+  // 子站点管理函数
+  const handleAddSubSite = () => {
+    setEditingSubSite(null)
+    subSiteForm.resetFields()
+    setSubSiteModalVisible(true)
+  }
+  
+  const handleEditSubSite = (subSite) => {
+    setEditingSubSite(subSite)
+    subSiteForm.setFieldsValue(subSite)
+    setSubSiteModalVisible(true)
+  }
+  
+  const handleSubSiteSubmit = async () => {
+    try {
+      const values = await subSiteForm.validateFields()
+      const url = editingSubSite 
+        ? `/api/sites/${id}/subsites/${editingSubSite.id}`
+        : `/api/sites/${id}/subsites`
+      const method = editingSubSite ? 'PATCH' : 'POST'
+      
+      const res = await fetch(url, {
+        method,
+        headers: authHeaders(true),
+        body: JSON.stringify(values)
+      })
+      
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || '操作失败')
+      }
+      
+      message.success(editingSubSite ? '修改成功' : '添加成功')
+      setSubSiteModalVisible(false)
+      load()
+    } catch (e) {
+      message.error(e.message || '操作失败')
+    }
+  }
+  
+  const handleDeleteSubSite = async (subSiteId) => {
+    try {
+      const res = await fetch(`/api/sites/${id}/subsites/${subSiteId}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      })
+      
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || '删除失败')
+      }
+      
+      message.success('删除成功')
+      load()
+    } catch (e) {
+      message.error(e.message || '删除失败')
+    }
   }
 
   const totalAdded = useMemo(() => 
@@ -653,6 +728,62 @@ export default function SiteDetail() {
           </Card>
         </Col>
       </Row>
+      
+      {/* 子站点列表 */}
+      <Card 
+        className="fade-in"
+        title={<span style={{ fontSize: 16, fontWeight: 600 }}>签到子站点</span>}
+        extra={
+          <Button type="primary" icon={<PlusCircleOutlined />} onClick={handleAddSubSite}>
+            添加子站点
+          </Button>
+        }
+        style={{
+          borderRadius: 16,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          marginBottom: 24
+        }}
+      >
+        {subSites.length === 0 ? (
+          <Empty description="暂无子站点" />
+        ) : (
+          <List
+            dataSource={subSites}
+            renderItem={(subSite) => (
+              <List.Item
+                actions={[
+                  <Button 
+                    type="link" 
+                    icon={<EditOutlined />} 
+                    onClick={() => handleEditSubSite(subSite)}
+                  >
+                    编辑
+                  </Button>,
+                  <Popconfirm
+                    title="确定删除此子站点吗？"
+                    onConfirm={() => handleDeleteSubSite(subSite.id)}
+                    okText="确定"
+                    cancelText="取消"
+                  >
+                    <Button type="link" danger icon={<DeleteOutlined />}>
+                      删除
+                    </Button>
+                  </Popconfirm>
+                ]}
+              >
+                <List.Item.Meta
+                  title={subSite.name}
+                  description={
+                    <Typography.Link href={subSite.url} target="_blank">
+                      {subSite.url}
+                    </Typography.Link>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        )}
+      </Card>
 
       <Card 
         className="fade-in-up"
@@ -1284,6 +1415,36 @@ export default function SiteDetail() {
             </div>
           )}
         </div>
+      </Modal>
+      
+      {/* 子站点管理Modal */}
+      <Modal
+        title={editingSubSite ? '编辑子站点' : '添加子站点'}
+        open={subSiteModalVisible}
+        onOk={handleSubSiteSubmit}
+        onCancel={() => setSubSiteModalVisible(false)}
+        okText="确定"
+        cancelText="取消"
+      >
+        <Form form={subSiteForm} layout="vertical">
+          <Form.Item
+            label="子站点名称"
+            name="name"
+            rules={[{ required: true, message: '请输入子站点名称' }]}
+          >
+            <Input placeholder="例如：签到站点1" />
+          </Form.Item>
+          <Form.Item
+            label="子站点URL"
+            name="url"
+            rules={[
+              { required: true, message: '请输入子站点URL' },
+              { type: 'url', message: '请输入有效的URL' }
+            ]}
+          >
+            <Input placeholder="https://example.com" />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   )

@@ -125,28 +125,37 @@ export default function MobileSiteCard({
         boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
         border: '1px solid rgba(0,0,0,0.06)',
         transition: 'all 0.3s ease',
-        height: '100%'
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column'
       }}
-      bodyStyle={{ padding: isMobile ? 12 : 14 }}
+      bodyStyle={{ 
+        padding: isMobile ? 12 : 14,
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1
+      }}
     >
-      {/* 头部：名称和URL */}
-      <Space size={4} wrap style={{ marginBottom: 4 }}>
-        <Typography.Text strong style={{ fontSize: isMobile ? 14 : 15 }}>
-          {site.name}
-        </Typography.Text>
-        {site.pinned && <PushpinFilled style={{ color: '#fa8c16', fontSize: 11 }} />}
-      </Space>
+      {/* 内容区域 */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* 头部：名称和URL */}
+        <Space size={4} wrap style={{ marginBottom: 4 }}>
+          <Typography.Text strong style={{ fontSize: isMobile ? 14 : 15 }}>
+            {site.name}
+          </Typography.Text>
+          {site.pinned && <PushpinFilled style={{ color: '#fa8c16', fontSize: 11 }} />}
+        </Space>
 
-      {/* URL */}
-      <Typography.Link 
-        href={site.baseUrl} 
-        target="_blank"
-        ellipsis
-        style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 6 }}
-      >
-        <GlobalOutlined style={{ marginRight: 4, fontSize: 10 }} />
-        {site.baseUrl}
-      </Typography.Link>
+        {/* URL */}
+        <Typography.Link 
+          href={site.baseUrl} 
+          target="_blank"
+          ellipsis
+          style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 6 }}
+        >
+          <GlobalOutlined style={{ marginRight: 4, fontSize: 10 }} />
+          {site.baseUrl}
+        </Typography.Link>
         
       {/* 余额和标签信息并排布局 */}
       <div style={{ 
@@ -154,7 +163,8 @@ export default function MobileSiteCard({
         gap: 8, 
         alignItems: 'flex-start',
         flexWrap: 'nowrap',
-        marginBottom: 6
+        marginBottom: 6,
+        minHeight: 52
       }}>
           {/* 余额信息 */}
           {billingStatus.detail ? (
@@ -251,46 +261,101 @@ export default function MobileSiteCard({
           </div>
       </div>
 
-      {/* API密钥 */}
-      {site.apiKey && (
-        <div style={{ 
-          background: '#f7f7f7', 
-          padding: '5px 6px', 
-          borderRadius: 6, 
-          marginBottom: 6 
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography.Text 
-              code 
-              style={{ 
-                fontSize: 10, 
-                fontFamily: 'monospace',
-                wordBreak: 'break-all',
-                flex: 1,
-                marginRight: 6
-              }}
-            >
-              {displayApiKey}
-            </Typography.Text>
-            <Space size={2}>
-              <Button
-                type="text"
-                size="small"
-                icon={isApiKeyVisible ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-                onClick={() => onToggleApiKey(site.id)}
-                style={{ padding: '2px', height: 20, width: 20 }}
-              />
-              <Button
-                type="text"
-                size="small"
-                icon={<CopyOutlined />}
-                onClick={() => onCopyApiKey(site.apiKey)}
-                style={{ padding: '2px', height: 20, width: 20 }}
-              />
-            </Space>
+        {/* API密钥 */}
+        {site.apiKey && (
+          <div style={{ 
+            background: '#f7f7f7', 
+            padding: '5px 6px', 
+            borderRadius: 6, 
+            marginBottom: 6 
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography.Text 
+                code 
+                style={{ 
+                  fontSize: 10, 
+                  fontFamily: 'monospace',
+                  wordBreak: 'break-all',
+                  flex: 1,
+                  marginRight: 6
+                }}
+              >
+                {displayApiKey}
+              </Typography.Text>
+              <Space size={2}>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={isApiKeyVisible ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                  onClick={() => onToggleApiKey(site.id)}
+                  style={{ padding: '2px', height: 20, width: 20 }}
+                />
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<CopyOutlined />}
+                  onClick={() => onCopyApiKey(site.apiKey)}
+                  style={{ padding: '2px', height: 20, width: 20 }}
+                />
+              </Space>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+        
+        {/* 子站点列表 */}
+        {site.subSites && site.subSites.length > 0 && (
+          <div style={{ marginBottom: 6 }}>
+            <div style={{ fontSize: 10, color: '#666', marginBottom: 3, fontWeight: 600 }}>
+              📍 签到站点 ({site.subSites.length})
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {site.subSites.map((subSite) => (
+                <a
+                  key={subSite.id}
+                  href={subSite.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`${subSite.name} - ${subSite.url}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '2px 6px',
+                    background: '#e6f7ff',
+                    borderRadius: 4,
+                    fontSize: 10,
+                    color: '#1890ff',
+                    textDecoration: 'none',
+                    border: '1px solid #91d5ff',
+                    transition: 'all 0.2s',
+                    maxWidth: '48%'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#1890ff';
+                    e.currentTarget.style.color = '#fff';
+                    e.currentTarget.style.borderColor = '#1890ff';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#e6f7ff';
+                    e.currentTarget.style.color = '#1890ff';
+                    e.currentTarget.style.borderColor = '#91d5ff';
+                  }}
+                >
+                  <span style={{ 
+                    overflow: 'hidden', 
+                    textOverflow: 'ellipsis', 
+                    whiteSpace: 'nowrap',
+                    fontWeight: 500
+                  }}>
+                    {subSite.name}
+                  </span>
+                  <span style={{ fontSize: 9, flexShrink: 0 }}>↗</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       <Divider style={{ margin: '6px 0' }} />
 
@@ -298,7 +363,7 @@ export default function MobileSiteCard({
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', 
-        gap: isMobile ? 6 : 5 
+        gap: isMobile ? 6 : 4 
       }}>
         <Button
           type="primary"
@@ -306,7 +371,7 @@ export default function MobileSiteCard({
           onClick={() => onView(site.id)}
           block
           size="small"
-          style={{ fontSize: 11, padding: '4px 8px', height: 28 }}
+          style={{ fontSize: 10, padding: '4px 6px', height: 26 }}
         >
           {isMobile ? '详情' : '查看'}
         </Button>
@@ -315,7 +380,7 @@ export default function MobileSiteCard({
           onClick={() => onCheck(site.id)}
           block
           size="small"
-          style={{ fontSize: 11, padding: '4px 8px', height: 28, color: '#52c41a', borderColor: '#52c41a' }}
+          style={{ fontSize: 10, padding: '4px 6px', height: 26, color: '#52c41a', borderColor: '#52c41a' }}
         >
           检测
         </Button>
@@ -324,7 +389,7 @@ export default function MobileSiteCard({
           onClick={() => onDebug(site)}
           block
           size="small"
-          style={{ fontSize: 11, padding: '4px 8px', height: 28, color: '#fa8c16', borderColor: '#fa8c16' }}
+          style={{ fontSize: 10, padding: '4px 6px', height: 26, color: '#fa8c16', borderColor: '#fa8c16' }}
         >
           调试
         </Button>
@@ -333,7 +398,7 @@ export default function MobileSiteCard({
           onClick={() => onSetTime(site)}
           block
           size="small"
-          style={{ fontSize: 11, padding: '4px 8px', height: 28 }}
+          style={{ fontSize: 10, padding: '4px 6px', height: 26 }}
         >
           定时
         </Button>
@@ -342,7 +407,7 @@ export default function MobileSiteCard({
           onClick={() => onEdit(site)}
           block
           size="small"
-          style={{ fontSize: 11, padding: '4px 8px', height: 28, color: '#1890ff', borderColor: '#1890ff' }}
+          style={{ fontSize: 10, padding: '4px 6px', height: 26, color: '#1890ff', borderColor: '#1890ff' }}
         >
           编辑
         </Button>
@@ -352,7 +417,7 @@ export default function MobileSiteCard({
           onClick={() => onDelete(site)}
           block
           size="small"
-          style={{ fontSize: 11, padding: '4px 8px', height: 28 }}
+          style={{ fontSize: 10, padding: '4px 6px', height: 26 }}
         >
           删除
         </Button>
