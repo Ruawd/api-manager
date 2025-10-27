@@ -4,11 +4,6 @@
 
 <p>统一管理多个 API 站点，支持自动签到、余额监控和智能通知</p>
 
-[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/K93Z2G?referralCode=2554906587)
-
-![GitHub license](https://img.shields.io/badge/license-MIT-blue)
-![Node.js](https://img.shields.io/badge/node.js-18%2B-green)
-
 </div>
 
 ---
@@ -51,19 +46,6 @@
 ---
 
 ## 🚀 快速开始
-
-### 🌟 一键部署（推荐）
-
-<div>
-  <strong>🎯 推荐使用 Zeabur 一键部署</strong><br>
-
-  
-  <br>
-  
-  [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/K93Z2G?referralCode=2554906587)
-</div>
-
----
 
 ### 🐳 Docker 部署
 

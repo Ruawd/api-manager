@@ -8,20 +8,24 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String     @id @default(cuid())
+  email        String     @unique
   passwordHash String
-  isAdmin      Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  isAdmin      Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  sites        Site[]     // 用户拥有的站点
+  categories   Category[] // 用户创建的分类
 }
 
 model Site {
   id                String           @id @default(cuid())
+  ownerId           String           // 站点所有者ID
+  owner             User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   name              String
   baseUrl           String
   apiKeyEnc         String
   apiType           String           @default("other") // newapi, veloera, donehub, voapi, other
-  userId            String?          // 用户ID，用于Newapi和Veloera
+  userId            String?          // API用户ID，用于Newapi和Veloera
   billingUrl        String?          // 自定义billing URL（用于"other"类型）
   billingAuthType   String           @default("token") // token, cookie
   billingAuthValue  String?          // 鉴权值（加密存储）
@@ -80,6 +84,7 @@ model ModelDiff {
 
 model EmailConfig {
   id                String   @id @default(cuid())
+  ownerId           String   @unique // 用户ID，每个用户一个配置
   resendApiKeyEnc   String
   notifyEmails      String
   enabled           Boolean  @default(true)
@@ -88,24 +93,29 @@ model EmailConfig {
 }
 
 model ScheduleConfig {
-  id                  String  @id @default(cuid())
-  enabled             Boolean @default(false) // 是否启用定时检测
-  hour                Int     @default(9)     // 小时 (0-23)
-  minute              Int     @default(0)     // 分钟 (0-59)
-  timezone            String  @default("Asia/Shanghai") // 时区
-  interval            Int     @default(30)    // 站点间检测间隔（秒）
-  overrideIndividual  Boolean @default(false) // 是否覆盖站点单独配置
+  id                  String    @id @default(cuid())
+  ownerId             String    @unique // 用户ID，每个用户一个配置
+  enabled             Boolean   @default(false) // 是否启用定时检测
+  hour                Int       @default(9)     // 小时 (0-23)
+  minute              Int       @default(0)     // 分钟 (0-59)
+  timezone            String    @default("Asia/Shanghai") // 时区
+  interval            Int       @default(30)    // 站点间检测间隔（秒）
+  overrideIndividual  Boolean   @default(false) // 是否覆盖站点单独配置
   lastRun             DateTime? // 上次运行时间
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
 model Category {
   id            String   @id @default(cuid())
-  name          String   @unique
+  ownerId       String   // 分类所有者ID
+  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name          String
   scheduleCron  String?
   timezone      String   @default("Asia/Shanghai")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   sites         Site[]
+  
+  @@unique([ownerId, name]) // 同一用户下分类名称唯一
 }

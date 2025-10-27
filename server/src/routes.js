@@ -21,9 +21,11 @@ async function routes(fastify) {
   fastify.get('/api/sites', async (request) => {
     const { search } = request.query || {};
     const { decrypt } = require('./crypto');
+    const userId = request.user.sub; // 获取当前登录用户ID
     
-    // 获取所有站点
+    // 只获取当前用户的站点
     const sites = await prisma.site.findMany({ 
+      where: { ownerId: userId },
       orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
       include: { category: true }
     });
@@ -134,14 +136,16 @@ async function routes(fastify) {
   // 导出站点别名，避免与 /api/sites/:id 动态路由潜在冲突
   fastify.get('/api/exports/sites', async (request, reply) => {
     try {
+      const currentUserId = request.user.sub;
       const sites = await prisma.site.findMany({
+        where: { ownerId: currentUserId },
         orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
         include: { category: true }
       });
 
       const { decrypt } = require('./crypto');
       const exportData = sites.map(site => {
-        const { apiKeyEnc, billingAuthValue, ...siteData } = site;
+        const { apiKeyEnc, billingAuthValue, ownerId, ...siteData } = site;
         return {
           ...siteData,
           apiKey: apiKeyEnc ? decrypt(apiKeyEnc) : null,
@@ -178,6 +182,7 @@ async function routes(fastify) {
     }
   }, async (request, reply) => {
     try {
+      const currentUserId = request.user.sub;
       const { sites } = request.body;
       
       if (!Array.isArray(sites) || sites.length === 0) {
@@ -188,8 +193,10 @@ async function routes(fastify) {
       let imported = 0;
       const errors = [];
       
-      // 先获取所有分类，用于匹配分类名称
-      const categories = await prisma.category.findMany();
+      // 先获取当前用户的所有分类，用于匹配分类名称
+      const categories = await prisma.category.findMany({
+        where: { ownerId: currentUserId }
+      });
       const categoryMap = new Map(categories.map(c => [c.name, c.id]));
       
       for (const siteData of sites) {
@@ -224,6 +231,7 @@ async function routes(fastify) {
           // 创建站点
           const site = await prisma.site.create({
             data: {
+              ownerId: currentUserId, // 导入的站点属于当前用户
               name, baseUrl, apiKeyEnc, apiType, userId, scheduleCron, timezone, pinned, excludeFromBatch,
               categoryId,
               billingUrl, billingAuthType, billingAuthValue: billingAuthValueEnc,
@@ -283,6 +291,8 @@ async function routes(fastify) {
       },
     },
   }, async (request) => {
+    const { encrypt } = require('./crypto');
+    const currentUserId = request.user.sub; // 获取当前登录用户ID
     const { 
       name, baseUrl, apiKey, apiType = 'other', userId = null, 
       scheduleCron = null, timezone = 'UTC', pinned = false, excludeFromBatch = false,
@@ -300,6 +310,7 @@ async function routes(fastify) {
     
     const site = await prisma.site.create({ 
       data: { 
+        ownerId: currentUserId, // 设置站点所有者为当前用户
         name, baseUrl, apiKeyEnc, apiType, userId, scheduleCron, timezone, pinned, excludeFromBatch,
         categoryId: categoryId || null, // 空字符串转换为 null
         billingUrl, billingAuthType, billingAuthValue: billingAuthValueEnc, 
@@ -341,6 +352,7 @@ async function routes(fastify) {
     },
   }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
     const data = {};
     const { 
       name, baseUrl, apiKey, apiType, userId, scheduleCron, timezone, pinned, excludeFromBatch,
@@ -350,6 +362,17 @@ async function routes(fastify) {
     } = request.body || {};
     
     try {
+      // 验证站点所有权
+      const site = await prisma.site.findUnique({ where: { id } });
+      if (!site) {
+        reply.code(404);
+        return { error: '站点不存在' };
+      }
+      if (site.ownerId !== currentUserId) {
+        reply.code(403);
+        return { error: '无权限修改此站点' };
+      }
+      
       if (name) data.name = name;
       if (baseUrl) data.baseUrl = baseUrl;
       if (apiType) data.apiType = apiType;
@@ -377,9 +400,9 @@ async function routes(fastify) {
       
       fastify.log.info({ updateData: data }, 'Updating site');
       
-      const site = await prisma.site.update({ where: { id }, data });
-      onSiteUpdated(site, fastify);
-      const { apiKeyEnc: _, ...rest } = site;
+      const updatedSite = await prisma.site.update({ where: { id }, data });
+      onSiteUpdated(updatedSite, fastify);
+      const { apiKeyEnc: _, ...rest } = updatedSite;
       return rest;
     } catch (error) {
       fastify.log.error({ error, id, body: request.body }, 'Failed to update site');
@@ -390,8 +413,21 @@ async function routes(fastify) {
 
   fastify.delete('/api/sites/:id', {
     schema: { params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] } },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
+    
+    // 验证站点所有权
+    const site = await prisma.site.findUnique({ where: { id } });
+    if (!site) {
+      reply.code(404);
+      return { error: '站点不存在' };
+    }
+    if (site.ownerId !== currentUserId) {
+      reply.code(403);
+      return { error: '无权限删除此站点' };
+    }
+    
     await prisma.modelDiff.deleteMany({ where: { siteId: id } });
     await prisma.modelSnapshot.deleteMany({ where: { siteId: id } });
     await prisma.site.delete({ where: { id } });
@@ -405,7 +441,20 @@ async function routes(fastify) {
     },
   }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
     const skipNotification = request.query?.skipNotification === 'true';
+    
+    // 验证站点所有权
+    const site = await prisma.site.findUnique({ where: { id } });
+    if (!site) {
+      reply.code(404);
+      return { error: '站点不存在' };
+    }
+    if (site.ownerId !== currentUserId) {
+      reply.code(403);
+      return { error: '无权限检测此站点' };
+    }
+    
     try {
       const result = await checkSiteById(id, fastify, { skipNotification, isManual: true });
       return { ok: true, message: '检测成功', ...result };
@@ -422,6 +471,7 @@ async function routes(fastify) {
     }
   }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
     const { decrypt } = require('./crypto');
     
     try {
@@ -433,6 +483,12 @@ async function routes(fastify) {
       if (!site) {
         reply.code(404);
         return { error: '站点不存在' };
+      }
+      
+      // 验证站点所有权
+      if (site.ownerId !== currentUserId) {
+        reply.code(403);
+        return { error: '无权限访问此站点' };
       }
       
       // 解密 API 密钥
@@ -478,6 +534,7 @@ async function routes(fastify) {
     }
   }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
     const { decrypt } = require('./crypto');
     
     try {
@@ -485,6 +542,12 @@ async function routes(fastify) {
       if (!site) {
         reply.code(404);
         return { error: '站点不存在' };
+      }
+      
+      // 验证站点所有权
+      if (site.ownerId !== currentUserId) {
+        reply.code(403);
+        return { error: '无权限访问此站点' };
       }
       
       const token = site.apiKeyEnc ? decrypt(site.apiKeyEnc) : null;
@@ -533,6 +596,7 @@ async function routes(fastify) {
     }
   }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
     const { decrypt } = require('./crypto');
     
     try {
@@ -540,6 +604,12 @@ async function routes(fastify) {
       if (!site) {
         reply.code(404);
         return { error: '站点不存在' };
+      }
+      
+      // 验证站点所有权
+      if (site.ownerId !== currentUserId) {
+        reply.code(403);
+        return { error: '无权限访问此站点' };
       }
       
       const token = site.apiKeyEnc ? decrypt(site.apiKeyEnc) : null;
@@ -764,9 +834,22 @@ async function routes(fastify) {
       params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
       querystring: { type: 'object', properties: { limit: { type: 'number' } } },
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
     const limit = Number(request.query?.limit || 50);
+    
+    // 验证站点所有权
+    const site = await prisma.site.findUnique({ where: { id } });
+    if (!site) {
+      reply.code(404);
+      return { error: '站点不存在' };
+    }
+    if (site.ownerId !== currentUserId) {
+      reply.code(403);
+      return { error: '无权限访问此站点数据' };
+    }
+    
     const diffs = await prisma.modelDiff.findMany({ where: { siteId: id }, orderBy: { diffAt: 'desc' }, take: limit });
     return diffs.map(d => ({
       ...d,
@@ -781,9 +864,22 @@ async function routes(fastify) {
       params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
       querystring: { type: 'object', properties: { limit: { type: 'number' } } },
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
     const limit = Number(request.query?.limit || 1);
+    
+    // 验证站点所有权
+    const site = await prisma.site.findUnique({ where: { id } });
+    if (!site) {
+      reply.code(404);
+      return { error: '站点不存在' };
+    }
+    if (site.ownerId !== currentUserId) {
+      reply.code(403);
+      return { error: '无权限访问此站点数据' };
+    }
+    
     // 只返回成功的快照（用于显示当前模型列表）
     const snaps = await prisma.modelSnapshot.findMany({ 
       where: { siteId: id, errorMessage: null }, 
@@ -797,8 +893,21 @@ async function routes(fastify) {
     schema: {
       params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
     },
-  }, async (request) => {
+  }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
+    
+    // 验证站点所有权
+    const site = await prisma.site.findUnique({ where: { id } });
+    if (!site) {
+      reply.code(404);
+      return { error: '站点不存在' };
+    }
+    if (site.ownerId !== currentUserId) {
+      reply.code(403);
+      return { error: '无权限访问此站点数据' };
+    }
+    
     const snap = await prisma.modelSnapshot.findFirst({
       where: { siteId: id },
       orderBy: { fetchedAt: 'desc' }
@@ -813,8 +922,11 @@ async function routes(fastify) {
   });
 
   // 邮件通知配置 API
-  fastify.get('/api/email-config', async () => {
-    const config = await prisma.emailConfig.findFirst();
+  fastify.get('/api/email-config', async (request) => {
+    const currentUserId = request.user.sub;
+    const config = await prisma.emailConfig.findUnique({
+      where: { ownerId: currentUserId }
+    });
     if (!config) {
       return { enabled: false, notifyEmails: '', resendApiKeyEnc: null };
     }
@@ -836,6 +948,7 @@ async function routes(fastify) {
       }
     }
   }, async (request, reply) => {
+    const currentUserId = request.user.sub;
     const { resendApiKey, notifyEmails, enabled = true } = request.body;
     
     // 验证邮箱格式
@@ -850,8 +963,10 @@ async function routes(fastify) {
     // 加密 API Key
     const resendApiKeyEnc = encrypt(resendApiKey);
     
-    // 检查是否已存在配置
-    const existing = await prisma.emailConfig.findFirst();
+    // 检查当前用户是否已存在配置
+    const existing = await prisma.emailConfig.findUnique({
+      where: { ownerId: currentUserId }
+    });
     
     let config;
     if (existing) {
@@ -863,7 +978,12 @@ async function routes(fastify) {
     } else {
       // 创建新配置
       config = await prisma.emailConfig.create({
-        data: { resendApiKeyEnc, notifyEmails, enabled }
+        data: { 
+          ownerId: currentUserId,
+          resendApiKeyEnc, 
+          notifyEmails, 
+          enabled 
+        }
       });
     }
     
@@ -891,8 +1011,10 @@ async function routes(fastify) {
   }, updateScheduleConfigHandler);
 
   // 分类管理路由
-  fastify.get('/api/categories', async () => {
+  fastify.get('/api/categories', async (request) => {
+    const currentUserId = request.user.sub;
     const categories = await prisma.category.findMany({ 
+      where: { ownerId: currentUserId },
       orderBy: { createdAt: 'asc' },
       include: { sites: true }
     });
@@ -912,11 +1034,17 @@ async function routes(fastify) {
       }
     }
   }, async (request, reply) => {
+    const currentUserId = request.user.sub;
     const { name, scheduleCron = null, timezone = 'Asia/Shanghai' } = request.body;
     
     try {
       const category = await prisma.category.create({
-        data: { name, scheduleCron, timezone }
+        data: { 
+          ownerId: currentUserId,
+          name, 
+          scheduleCron, 
+          timezone 
+        }
       });
       return category;
     } catch (e) {
@@ -941,16 +1069,28 @@ async function routes(fastify) {
     }
   }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
     const data = {};
     const { name, scheduleCron, timezone } = request.body || {};
+    
+    // 验证分类所有权
+    const category = await prisma.category.findUnique({ where: { id } });
+    if (!category) {
+      reply.code(404);
+      return { error: '分类不存在' };
+    }
+    if (category.ownerId !== currentUserId) {
+      reply.code(403);
+      return { error: '无权限修改此分类' };
+    }
     
     if (name) data.name = name;
     if (scheduleCron !== undefined) data.scheduleCron = scheduleCron;
     if (timezone) data.timezone = timezone;
     
     try {
-      const category = await prisma.category.update({ where: { id }, data });
-      return category;
+      const updatedCategory = await prisma.category.update({ where: { id }, data });
+      return updatedCategory;
     } catch (e) {
       if (e.code === 'P2002') {
         return reply.code(400).send({ error: '分类名称已存在' });
@@ -966,11 +1106,23 @@ async function routes(fastify) {
     schema: { params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] } }
   }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
+    
+    // 验证分类所有权
+    const category = await prisma.category.findUnique({ where: { id } });
+    if (!category) {
+      reply.code(404);
+      return { error: '分类不存在' };
+    }
+    if (category.ownerId !== currentUserId) {
+      reply.code(403);
+      return { error: '无权限删除此分类' };
+    }
     
     try {
       // 将该分类下的所有站点的categoryId设为null（归入未分类）
       await prisma.site.updateMany({
-        where: { categoryId: id },
+        where: { categoryId: id, ownerId: currentUserId },
         data: { categoryId: null }
       });
       
@@ -993,12 +1145,25 @@ async function routes(fastify) {
     }
   }, async (request, reply) => {
     const { id } = request.params;
+    const currentUserId = request.user.sub;
     const skipNotification = request.query?.skipNotification === 'true';
+    
+    // 验证分类所有权
+    const category = await prisma.category.findUnique({ where: { id } });
+    if (!category) {
+      reply.code(404);
+      return { error: '分类不存在' };
+    }
+    if (category.ownerId !== currentUserId) {
+      reply.code(403);
+      return { error: '无权限检测此分类' };
+    }
     
     // 获取该分类下的所有站点（不包括置顶和排除一键检测的站点）
     const sites = await prisma.site.findMany({
       where: { 
         categoryId: id,
+        ownerId: currentUserId,
         pinned: false,
         excludeFromBatch: false
       }
@@ -1047,11 +1212,15 @@ module.exports = { routes };
 // 定时配置处理器
 async function getScheduleConfigHandler(request, reply) {
   try {
-    let config = await prisma.scheduleConfig.findFirst();
+    const currentUserId = request.user.sub;
+    let config = await prisma.scheduleConfig.findUnique({
+      where: { ownerId: currentUserId }
+    });
     if (!config) {
       // 创建默认配置
       config = await prisma.scheduleConfig.create({
         data: {
+          ownerId: currentUserId,
           enabled: false,
           hour: 9,
           minute: 0,
@@ -1069,6 +1238,7 @@ async function getScheduleConfigHandler(request, reply) {
 
 async function updateScheduleConfigHandler(request, reply) {
   try {
+    const currentUserId = request.user.sub;
     const { enabled, hour, minute, interval, overrideIndividual } = request.body;
     
     // 验证参数
@@ -1082,8 +1252,10 @@ async function updateScheduleConfigHandler(request, reply) {
       });
     }
 
-    // 查找现有配置
-    let config = await prisma.scheduleConfig.findFirst();
+    // 查找当前用户的配置
+    let config = await prisma.scheduleConfig.findUnique({
+      where: { ownerId: currentUserId }
+    });
     
     const updateData = { 
       enabled, 
@@ -1103,7 +1275,11 @@ async function updateScheduleConfigHandler(request, reply) {
     } else {
       // 创建新配置
       config = await prisma.scheduleConfig.create({
-        data: { ...updateData, timezone: 'Asia/Shanghai' }
+        data: { 
+          ownerId: currentUserId,
+          ...updateData, 
+          timezone: 'Asia/Shanghai' 
+        }
       });
     }
 
