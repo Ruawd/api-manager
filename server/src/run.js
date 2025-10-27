@@ -847,6 +847,32 @@ async function checkSite(site, fastify, options = {}) {
     
     console.log(`[ERROR-SNAPSHOT] 检测失败，创建错误快照 - billingLimit: ${billingLimit}, billingUsage: ${billingUsage}, billingError: ${billingError}`);
     
+    // 提取和截断错误信息，避免HTML页面导致信息过长
+    let errorMsg = e.errorMessage || e.error?.message || String(e);
+    // 如果是HTML响应，尝试提取关键信息
+    if (errorMsg.includes('<!doctype html>') || errorMsg.includes('<html')) {
+      // 提取HTTP状态码和标题
+      const statusMatch = errorMsg.match(/HTTP (\d+):/);
+      const titleMatch = errorMsg.match(/<title>(.*?)<\/title>/i);
+      const h1Match = errorMsg.match(/<h1[^>]*>(.*?)<\/h1>/i);
+      
+      if (statusMatch) {
+        let summary = `HTTP ${statusMatch[1]}`;
+        if (titleMatch) {
+          summary += `: ${titleMatch[1].replace(/\s+/g, ' ').trim()}`;
+        } else if (h1Match) {
+          summary += `: ${h1Match[1].replace(/\s+/g, ' ').trim()}`;
+        }
+        errorMsg = summary;
+      } else {
+        // 如果无法提取，只保留前200个字符
+        errorMsg = errorMsg.substring(0, 200) + '... (HTML响应已截断)';
+      }
+    } else if (errorMsg.length > 500) {
+      // 普通错误信息也限制长度
+      errorMsg = errorMsg.substring(0, 500) + '... (内容已截断)';
+    }
+    
     await prisma.modelSnapshot.create({
       data: {
         siteId: site.id,
@@ -854,7 +880,7 @@ async function checkSite(site, fastify, options = {}) {
         hash: '',
         fetchedAt: now,
         rawResponse: e.rawResponse,
-        errorMessage: e.errorMessage || e.error?.message || String(e),
+        errorMessage: errorMsg,
         statusCode: e.statusCode,
         responseTime: e.responseTime,
         // 即使模型检测失败，也保存billing信息（如果有的话）
