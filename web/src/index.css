@@ -58,6 +58,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: var(--bg-primary);
   overflow-x: hidden;
+  /* iOS安全区域适配 */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* iOS安全区域底部适配 */
+.ant-layout {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* iOS 风格滚动条 */
@@ -378,18 +386,279 @@ body {
   animation: slideInRight 0.4s ease-out;
 }
 
-/* 响应式设计 */
+/* 响应式显示控制 */
+.mobile-only {
+  display: none;
+}
+
+.desktop-only {
+  display: inline;
+}
+
+/* iOS 移动端适配 */
 @media (max-width: 768px) {
-  .ant-layout-content {
-    padding: 16px 24px !important;
+  .mobile-only {
+    display: inline !important;
   }
   
+  .desktop-only {
+    display: none !important;
+  }
+  
+  /* 布局优化 */
+  .ant-layout-content {
+    padding: 12px 16px !important;
+  }
+  
+  .ant-layout-header {
+    padding: 0 16px !important;
+    height: auto !important;
+    min-height: 56px;
+  }
+  
+  /* 表格移动端优化 */
   .ant-table {
+    font-size: 12px;
+  }
+  
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    padding: 8px 4px !important;
+  }
+  
+  /* 按钮适配触摸 */
+  .ant-btn {
     font-size: 13px;
+    min-height: 36px;
+    padding: 4px 12px;
+  }
+  
+  .ant-btn-lg {
+    min-height: 42px;
+    font-size: 14px;
+  }
+  
+  /* 卡片间距 */
+  .ant-card {
+    margin-bottom: 12px;
+  }
+  
+  .ant-card-body {
+    padding: 16px;
+  }
+  
+  /* 模态框适配 */
+  .ant-modal {
+    max-width: calc(100vw - 32px);
+    margin: 16px auto;
+  }
+  
+  .ant-modal-body {
+    padding: 20px 16px;
+  }
+  
+  /* 表单项 */
+  .ant-form-item {
+    margin-bottom: 16px;
+  }
+  
+  /* 输入框适配触摸 */
+  .ant-input,
+  .ant-input-password,
+  .ant-select-selector {
+    min-height: 40px;
+    font-size: 14px;
+  }
+  
+  /* 折叠面板 */
+  .ant-collapse-header {
+    padding: 12px 16px !important;
+  }
+  
+  .ant-collapse-content-box {
+    padding: 16px !important;
+  }
+  
+  /* 统计卡片 */
+  .ant-statistic-title {
+    font-size: 12px;
+  }
+  
+  .ant-statistic-content {
+    font-size: 24px !important;
+  }
+  
+  /* 标签 */
+  .ant-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+  
+  /* Space组件 */
+  .ant-space {
+    gap: 4px !important;
+  }
+  
+  /* 分页器 */
+  .ant-pagination {
+    font-size: 12px;
+  }
+  
+  .ant-pagination-item {
+    min-width: 28px;
+    height: 28px;
+    line-height: 28px;
+  }
+  
+  /* 菜单移动端优化 - 只显示图标 */
+  .ant-menu-horizontal {
+    min-width: auto;
+  }
+  
+  .ant-menu-horizontal > .ant-menu-item {
+    padding: 0 8px !important;
+    margin: 0 2px !important;
+  }
+  
+  .ant-menu-title-content {
+    margin-left: 4px !important;
+  }
+  
+  /* 表格横向滚动 */
+  .ant-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* 统计卡片网格 */
+  .ant-row {
+    margin-left: -6px !important;
+    margin-right: -6px !important;
+  }
+  
+  .ant-col {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+}
+
+/* 超小屏幕（手机竖屏） */
+@media (max-width: 480px) {
+  .ant-layout-header {
+    padding: 0 12px !important;
+  }
+  
+  .ant-layout-content {
+    padding: 8px 12px !important;
+  }
+  
+  .ant-card-body {
+    padding: 12px;
+  }
+  
+  .ant-modal {
+    max-width: calc(100vw - 16px);
+    margin: 8px;
+  }
+  
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    padding: 6px 2px !important;
+    font-size: 11px;
   }
   
   .ant-btn {
-    font-size: 14px;
+    font-size: 12px;
+    padding: 2px 8px;
+    min-height: 32px;
+  }
+  
+  /* 隐藏次要列 */
+  .mobile-hide {
+    display: none !important;
+  }
+  
+  /* 菜单进一步精简 */
+  .ant-menu-horizontal > .ant-menu-item {
+    padding: 0 6px !important;
+    margin: 0 1px !important;
+    min-width: 32px;
+  }
+  
+  .ant-menu-item-icon {
+    font-size: 16px !important;
+  }
+  
+  /* 标题文字缩小 */
+  .ant-typography h2,
+  .ant-typography h3,
+  .ant-typography h4 {
+    font-size: 16px !important;
+  }
+  
+  /* 搜索框 */
+  .ant-input-search {
+    max-width: 100% !important;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  /* 增大可点击区域 - 符合iOS人机界面指南(最小44x44) */
+  .ant-btn {
+    min-height: 44px;
+    padding: 8px 16px;
+  }
+  
+  .ant-menu-item {
+    min-height: 44px;
+  }
+  
+  /* 防止双击缩放 */
+  * {
+    touch-action: manipulation;
+  }
+  
+  /* 优化滚动 */
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* 输入框适配 */
+  .ant-input,
+  .ant-input-password,
+  .ant-select-selector {
+    min-height: 44px;
+  }
+  
+  /* 禁用hover效果（触摸设备不需要） */
+  .ant-btn:hover {
+    transform: none;
+  }
+  
+  .ant-card-hoverable:hover {
+    transform: none;
+  }
+}
+
+/* 移动端专用工具类 */
+.mobile-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .mobile-stack {
+    width: 100%;
+  }
+  
+  .mobile-full-width {
+    width: 100% !important;
+  }
+  
+  .mobile-text-center {
+    text-align: center !important;
   }
 }
 

@@ -35,12 +35,13 @@ export default function Login() {
     }}>
       <Card 
         style={{ 
-          width: 460,
+          width: '100%',
+          maxWidth: 460,
           borderRadius: 16,
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
           overflow: 'hidden'
         }}
-        bodyStyle={{ padding: 48 }}
+        bodyStyle={{ padding: 'clamp(24px, 6vw, 48px)' }}
       >
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <ApiOutlined style={{ 

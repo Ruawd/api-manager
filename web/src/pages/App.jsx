@@ -106,21 +106,25 @@ export default function App() {
         alignItems: 'center',
         background: 'rgba(255, 255, 255, 0.95)',
         boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        padding: '0 32px',
-        height: 70
+        padding: '0 clamp(12px, 4vw, 32px)',
+        height: 'auto',
+        minHeight: '56px',
+        flexWrap: 'wrap'
       }}>
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
-          gap: 12,
-          fontSize: 20,
+          gap: 8,
+          fontSize: 'clamp(16px, 4vw, 20px)',
           fontWeight: 700,
           background: 'linear-gradient(135deg, #1890ff 0%, #096dd9 100%)',
           WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
+          WebkitTextFillColor: 'transparent',
+          padding: '8px 0'
         }}>
-          <ApiOutlined style={{ fontSize: 28, color: '#1890ff' }} />
-          API管理系统
+          <ApiOutlined style={{ fontSize: 'clamp(20px, 5vw, 28px)', color: '#1890ff' }} />
+          <span className="desktop-only">API管理系统</span>
+          <span className="mobile-only" style={{ display: 'none' }}>API</span>
         </div>
         <Menu 
           mode="horizontal" 
@@ -128,35 +132,41 @@ export default function App() {
           style={{ 
             border: 'none',
             background: 'transparent',
-            fontSize: 16,
-            fontWeight: 500
+            fontSize: 'clamp(13px, 3vw, 16px)',
+            fontWeight: 500,
+            flex: 1,
+            justifyContent: 'flex-end'
           }}
           items={[
             {
               key: 'sites',
               icon: <AppstoreOutlined />,
-              label: '站点管理',
-              onClick: () => nav('/')
+              label: <span className="desktop-only">站点管理</span>,
+              onClick: () => nav('/'),
+              title: '站点管理'
             },
             {
               key: 'export',
               icon: <DownloadOutlined />,
-              label: '导出站点',
-              onClick: handleExport
+              label: <span className="desktop-only">导出</span>,
+              onClick: handleExport,
+              title: '导出站点'
             },
             {
               key: 'import',
               icon: <UploadOutlined />,
-              label: '导入站点',
+              label: <span className="desktop-only">导入</span>,
               onClick: handleImport,
-              disabled: importing
+              disabled: importing,
+              title: '导入站点'
             },
             {
               key: 'logout',
               icon: <LogoutOutlined />,
-              label: '退出登录',
+              label: <span className="desktop-only">退出</span>,
               onClick: logout,
-              danger: true
+              danger: true,
+              title: '退出登录'
             }
           ]}
         />
@@ -169,7 +179,7 @@ export default function App() {
         onChange={handleFileChange}
       />
       <Layout.Content style={{ 
-        padding: '32px 48px',
+        padding: 'clamp(16px, 4vw, 32px) clamp(16px, 5vw, 48px)',
         maxWidth: 1400,
         width: '100%',
         margin: '0 auto'
