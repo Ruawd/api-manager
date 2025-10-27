@@ -65,9 +65,31 @@
 
 ## 🚀 快速开始
 
-### 📦 推荐方式：从源码构建部署
+### 🐳 方式一：使用 Docker 镜像部署（推荐）
 
-由于这是个人二改项目，建议直接从源码构建：
+**快速启动**：
+
+```bash
+docker run -d \
+  --name api-manager \
+  -p 3006:3006 \
+  -v api-manager-data:/app/data \
+  ruawd/api-manager:latest
+```
+
+**使用 Docker Compose**：
+
+```bash
+# 创建 docker-compose.yml
+wget https://raw.githubusercontent.com/Ruawd/api-manager/main/docker-compose.yml
+
+# 启动服务
+docker-compose up -d
+```
+
+### 📦 方式二：从源码构建部署
+
+如果你想自定义或贡献代码：
 
 **1. 克隆仓库**
 
@@ -79,11 +101,10 @@ cd api-manager
 **2. 构建并启动**
 
 ```bash
-# 使用 Docker Compose 一键启动
-docker-compose up -d
-
-# 或手动构建
+# 构建镜像
 docker build -t api-manager:latest .
+
+# 启动容器
 docker run -d \
   --name api-manager \
   -p 3006:3006 \
@@ -117,7 +138,7 @@ version: '3.8'
 
 services:
   api-manager:
-    build: .
+    image: ruawd/api-manager:latest
     container_name: api-manager
     ports:
       - "3006:3006"

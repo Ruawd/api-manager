@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  api-manager:
+    image: ruawd/api-manager:latest
+    container_name: api-manager
+    ports:
+      - "3006:3006"
+    volumes:
+      - api-manager-data:/app/data
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3006
+
+volumes:
+  api-manager-data:
+
