@@ -3097,7 +3097,10 @@ export default function Sites() {
                       background: '#f5f5f5',
                       padding: 8,
                       borderRadius: 4,
-                      wordBreak: 'break-all'
+                      wordBreak: 'break-word',
+                      maxHeight: 120,
+                      overflowY: 'auto',
+                      whiteSpace: 'pre-wrap'
                     }}>
                       {failed.error}
                     </div>
