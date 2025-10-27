@@ -52,20 +52,21 @@ export default function MobileSiteCard({
     }
     if (typeof billingLimit === 'number' && typeof billingUsage === 'number') {
       const remaining = billingLimit - billingUsage
-      const percentage = (billingUsage / billingLimit) * 100
+      const usedPercentage = (billingUsage / billingLimit) * 100
+      const remainingPercentage = (remaining / billingLimit) * 100
       let color = '#52c41a'
-      if (percentage > 90) color = '#ff4d4f'
-      else if (percentage > 70) color = '#fa8c16'
+      if (usedPercentage > 90) color = '#ff4d4f'
+      else if (usedPercentage > 70) color = '#fa8c16'
       
       return { 
-        type: percentage > 90 ? 'danger' : percentage > 70 ? 'warning' : 'success',
+        type: usedPercentage > 90 ? 'danger' : usedPercentage > 70 ? 'warning' : 'success',
         color,
         text: `$${remaining.toFixed(2)}`,
         detail: {
           total: billingLimit.toFixed(2),
           used: billingUsage.toFixed(2),
           remaining: remaining.toFixed(2),
-          percentage: percentage.toFixed(1)
+          percentage: remainingPercentage.toFixed(1)
         }
       }
     }
@@ -77,11 +78,32 @@ export default function MobileSiteCard({
     ? site.apiKey 
     : site.apiKey ? `${site.apiKey.slice(0, 8)}...${site.apiKey.slice(-4)}` : '-'
   
+  // 解析cron表达式为可读时间
+  const parseCron = (cronExpr) => {
+    try {
+      // 标准cron格式: 分 时 日 月 周
+      const parts = cronExpr.trim().split(/\s+/)
+      if (parts.length >= 2) {
+        const minute = parts[0]
+        const hour = parts[1]
+        // 如果是数字，格式化为HH:MM
+        if (!isNaN(minute) && !isNaN(hour)) {
+          const h = String(hour).padStart(2, '0')
+          const m = String(minute).padStart(2, '0')
+          return `${h}:${m}`
+        }
+      }
+      return cronExpr // 无法解析则返回原样
+    } catch (e) {
+      return cronExpr
+    }
+  }
+
   // 获取定时计划显示
   const getScheduleDisplay = () => {
     // 单独配置
     if (site.scheduleCron && site.scheduleCron.trim()) {
-      return { text: site.scheduleCron, color: 'blue', type: '单独' }
+      return { text: parseCron(site.scheduleCron), color: 'blue', type: '单独' }
     }
     // 全局配置
     if (scheduleConfig?.enabled) {
@@ -135,25 +157,25 @@ export default function MobileSiteCard({
             border: `1px solid ${billingStatus.color}`,
             borderRadius: 6,
             padding: '6px 8px',
-            fontSize: 10
+            fontSize: 10,
+            display: 'inline-block',
+            minWidth: 'fit-content'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
-              <span style={{ color: '#888', fontSize: 10 }}>总额</span>
-              <span style={{ fontWeight: 600, fontSize: 11 }}>${billingStatus.detail.total}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 3 }}>
-              <span style={{ color: '#888', fontSize: 10 }}>已用</span>
-              <span style={{ fontWeight: 600, fontSize: 11 }}>
-                ${billingStatus.detail.used} 
-                <span style={{ color: billingStatus.color, marginLeft: 4 }}>
-                  ({billingStatus.detail.percentage}%)
-                </span>
+            <div style={{ display: 'flex', gap: '4px 12px', flexWrap: 'wrap', alignItems: 'baseline' }}>
+              <span style={{ color: '#888', fontSize: 10, whiteSpace: 'nowrap' }}>
+                总额 <span style={{ fontWeight: 600, fontSize: 11, color: '#333' }}>${billingStatus.detail.total}</span>
+              </span>
+              <span style={{ color: '#888', fontSize: 10, whiteSpace: 'nowrap' }}>
+                已用 <span style={{ fontWeight: 600, fontSize: 11, color: '#333' }}>${billingStatus.detail.used}</span>
               </span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <div style={{ marginTop: 4, display: 'flex', alignItems: 'baseline', gap: 4 }}>
               <span style={{ color: '#888', fontSize: 10 }}>剩余</span>
               <span style={{ fontWeight: 700, color: billingStatus.color, fontSize: 14 }}>
                 ${billingStatus.detail.remaining}
+              </span>
+              <span style={{ color: billingStatus.color, fontSize: 10, fontWeight: 600 }}>
+                ({billingStatus.detail.percentage}%)
               </span>
             </div>
           </div>
