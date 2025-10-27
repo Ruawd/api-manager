@@ -1,6 +1,15 @@
 MIT License
 
-Copyright (c) 2025 jwy87
+Copyright (c) 2025 jwy87 (Original SimpleHub project)
+Copyright (c) 2025 Ruawd (Enhanced features and modifications)
+
+This project is based on SimpleHub (https://github.com/jwy87/SimpleHub)
+with significant enhancements including:
+- iOS-style UI design
+- Mobile responsive layout
+- Multi-user system with data isolation
+- Sub-site management features
+- Enhanced card-based interface
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
