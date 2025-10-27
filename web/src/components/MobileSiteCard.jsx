@@ -26,6 +26,8 @@ export default function MobileSiteCard({
   onDelete,
   onToggleApiKey,
   onCopyApiKey,
+  onShowApiToken,
+  onCopyUrl,
   isApiKeyVisible,
   scheduleConfig,
   isMobile = true
@@ -146,21 +148,35 @@ export default function MobileSiteCard({
             </Typography.Text>
             {site.pinned && <PushpinFilled style={{ color: '#fa8c16', fontSize: 12 }} />}
           </div>
-          <Typography.Link 
-            href={site.baseUrl} 
-            target="_blank"
-            ellipsis
-            style={{ 
-              fontSize: 11, 
-              color: '#999',
-              maxWidth: '45%',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {site.baseUrl.replace(/^https?:\/\/(www\.)?/, '')}
-          </Typography.Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Typography.Link 
+              href={site.baseUrl} 
+              target="_blank"
+              ellipsis
+              style={{ 
+                fontSize: 11, 
+                color: '#999',
+                maxWidth: isMobile ? '120px' : '180px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {site.baseUrl.replace(/^https?:\/\/(www\.)?/, '')}
+            </Typography.Link>
+            <Tooltip title="复制站点URL">
+              <Button
+                type="text"
+                size="small"
+                icon={<CopyOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onCopyUrl(site.baseUrl)
+                }}
+                style={{ padding: '2px', height: 20, width: 20, fontSize: 11 }}
+              />
+            </Tooltip>
+          </div>
         </div>
         
       {/* 余额和标签信息并排布局 */}
@@ -266,7 +282,7 @@ export default function MobileSiteCard({
           </div>
       </div>
 
-        {/* API密钥 */}
+        {/* 系统访问密钥（用于登录系统） */}
         {site.apiKey && (
           <div style={{ 
             background: '#f7f7f7', 
@@ -275,18 +291,19 @@ export default function MobileSiteCard({
             marginBottom: 8 
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography.Text 
-                code 
-                style={{ 
-                  fontSize: 13, 
-                  fontFamily: 'monospace',
-                  wordBreak: 'break-all',
-                  flex: 1,
-                  marginRight: 6
-                }}
-              >
-                {displayApiKey}
-              </Typography.Text>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 10, color: '#999', marginBottom: 2 }}>系统访问密钥</div>
+                <Typography.Text 
+                  code 
+                  style={{ 
+                    fontSize: 13, 
+                    fontFamily: 'monospace',
+                    wordBreak: 'break-all'
+                  }}
+                >
+                  {isApiKeyVisible ? site.apiKey : `${site.apiKey.slice(0, 8)}...${site.apiKey.slice(-4)}`}
+                </Typography.Text>
+              </div>
               <Space size={2}>
                 <Button
                   type="text"
@@ -365,7 +382,7 @@ export default function MobileSiteCard({
       {/* 操作按钮 */}
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', 
+        gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(7, 1fr)', 
         gap: isMobile ? 6 : 5 
       }}>
         <Button
@@ -386,6 +403,15 @@ export default function MobileSiteCard({
           style={{ fontSize: 12, padding: '4px 6px', height: 32, color: '#52c41a', borderColor: '#52c41a' }}
         >
           检测
+        </Button>
+        <Button
+          icon={<KeyOutlined />}
+          onClick={() => onShowApiToken(site)}
+          block
+          size="small"
+          style={{ fontSize: 12, padding: '4px 6px', height: 32, color: '#722ed1', borderColor: '#722ed1' }}
+        >
+          令牌
         </Button>
         <Button
           icon={<BugOutlined />}

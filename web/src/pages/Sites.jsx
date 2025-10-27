@@ -58,6 +58,10 @@ export default function Sites() {
   // API密钥查看相关状态
   const [visibleApiKeys, setVisibleApiKeys] = useState(new Set())
   
+  // API令牌弹窗相关状态
+  const [apiTokenModalOpen, setApiTokenModalOpen] = useState(false)
+  const [currentApiToken, setCurrentApiToken] = useState(null)
+  
   // 搜索和分类相关状态
   const [searchKeyword, setSearchKeyword] = useState('')
   const [categories, setCategories] = useState([])
@@ -926,6 +930,30 @@ export default function Sites() {
     })
   }, [])
 
+  // 复制URL
+  const copyUrl = useCallback((url) => {
+    navigator.clipboard.writeText(url).then(() => {
+      message.success('站点URL已复制')
+    }).catch(() => {
+      message.error('复制失败，请手动复制')
+    })
+  }, [])
+
+  // 显示API令牌弹窗
+  const showApiTokenModal = useCallback((site) => {
+    setCurrentApiToken(site)
+    setApiTokenModalOpen(true)
+  }, [])
+
+  // 复制API令牌
+  const copyApiToken = useCallback((token) => {
+    navigator.clipboard.writeText(token).then(() => {
+      message.success('API令牌已复制到剪贴板')
+    }).catch(() => {
+      message.error('复制失败，请手动复制')
+    })
+  }, [])
+
   const columns = [
     {
       title: <span style={{ fontSize: 15, fontWeight: 600 }}>名称</span>,
@@ -1482,6 +1510,8 @@ export default function Sites() {
                 }}
                 onToggleApiKey={toggleApiKeyVisibility}
                 onCopyApiKey={copyApiKey}
+                onShowApiToken={showApiTokenModal}
+                onCopyUrl={copyUrl}
                 isApiKeyVisible={visibleApiKeys.has(site.id)}
               />
             ))}
@@ -3134,6 +3164,117 @@ export default function Sites() {
           </div>
         </Modal>
       )}
+
+      {/* API令牌弹窗 */}
+      <Modal
+        open={apiTokenModalOpen}
+        onCancel={() => {
+          setApiTokenModalOpen(false)
+          setCurrentApiToken(null)
+        }}
+        footer={[
+          <Button 
+            key="copy" 
+            type="primary" 
+            icon={<CopyOutlined />}
+            onClick={() => {
+              if (currentApiToken?.apiKey) {
+                copyApiToken(currentApiToken.apiKey)
+              }
+            }}
+            style={{ height: 40, fontSize: 15 }}
+          >
+            复制令牌
+          </Button>,
+          <Button 
+            key="close" 
+            onClick={() => {
+              setApiTokenModalOpen(false)
+              setCurrentApiToken(null)
+            }}
+            style={{ height: 40, fontSize: 15 }}
+          >
+            关闭
+          </Button>
+        ]}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <KeyOutlined style={{ color: '#722ed1', fontSize: 20 }} />
+            <Typography.Title level={4} style={{ margin: 0 }}>
+              API 令牌
+            </Typography.Title>
+          </div>
+        }
+        width={600}
+        destroyOnClose
+      >
+        {currentApiToken && (
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <Typography.Text strong style={{ fontSize: 15, display: 'block', marginBottom: 8 }}>
+                站点信息
+              </Typography.Text>
+              <div style={{ 
+                background: '#f5f5f5', 
+                padding: 12, 
+                borderRadius: 8,
+                marginBottom: 8
+              }}>
+                <div style={{ marginBottom: 6 }}>
+                  <Typography.Text type="secondary" style={{ fontSize: 13 }}>名称：</Typography.Text>
+                  <Typography.Text strong style={{ fontSize: 14 }}>{currentApiToken.name}</Typography.Text>
+                </div>
+                <div>
+                  <Typography.Text type="secondary" style={{ fontSize: 13 }}>地址：</Typography.Text>
+                  <Typography.Link href={currentApiToken.baseUrl} target="_blank" style={{ fontSize: 14 }}>
+                    {currentApiToken.baseUrl}
+                  </Typography.Link>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <Typography.Text strong style={{ fontSize: 15, display: 'block', marginBottom: 8 }}>
+                API 令牌（API Key）
+              </Typography.Text>
+              <Typography.Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 12 }}>
+                此令牌用于访问该站点的 API 服务，请妥善保管
+              </Typography.Text>
+              <div style={{ 
+                background: '#f0f5ff', 
+                border: '1px solid #adc6ff',
+                padding: 16, 
+                borderRadius: 8,
+                wordBreak: 'break-all'
+              }}>
+                <Typography.Text 
+                  code 
+                  style={{ 
+                    fontSize: 14, 
+                    fontFamily: 'Consolas, Monaco, monospace',
+                    color: '#1890ff',
+                    userSelect: 'all'
+                  }}
+                >
+                  {currentApiToken.apiKey}
+                </Typography.Text>
+              </div>
+            </div>
+
+            <div style={{
+              background: '#fff7e6',
+              border: '1px solid #ffd591',
+              borderRadius: 8,
+              padding: 12,
+              marginTop: 16
+            }}>
+              <Typography.Text style={{ fontSize: 13, color: '#d48806' }}>
+                💡 <strong>提示：</strong>点击上方"复制令牌"按钮可快速复制到剪贴板
+              </Typography.Text>
+            </div>
+          </div>
+        )}
+      </Modal>
 
     </Card>
   )
