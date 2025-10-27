@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api-manager:
-    image: ruawd/api-manager:latest
+    image: ghcr.io/ruawd/api-manager:latest
     container_name: api-manager
     ports:
       - "3006:3006"

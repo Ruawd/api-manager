@@ -74,7 +74,7 @@ docker run -d \
   --name api-manager \
   -p 3006:3006 \
   -v api-manager-data:/app/data \
-  ruawd/api-manager:latest
+  ghcr.io/ruawd/api-manager:latest
 ```
 
 **使用 Docker Compose**：
@@ -138,7 +138,7 @@ version: '3.8'
 
 services:
   api-manager:
-    image: ruawd/api-manager:latest
+    image: ghcr.io/ruawd/api-manager:latest
     container_name: api-manager
     ports:
       - "3006:3006"
