@@ -1627,6 +1627,8 @@ export default function Sites() {
                       }}
                       onToggleApiKey={toggleApiKeyVisibility}
                       onCopyApiKey={copyApiKey}
+                      onShowApiToken={showApiTokenModal}
+                      onCopyUrl={copyUrl}
                       isApiKeyVisible={visibleApiKeys.has(site.id)}
                     />
                   ))}
@@ -1909,6 +1911,8 @@ export default function Sites() {
                       }}
                       onToggleApiKey={toggleApiKeyVisibility}
                       onCopyApiKey={copyApiKey}
+                      onShowApiToken={showApiTokenModal}
+                      onCopyUrl={copyUrl}
                       isApiKeyVisible={visibleApiKeys.has(site.id)}
                     />
                   ))}
