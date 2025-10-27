@@ -1449,52 +1449,43 @@ export default function Sites() {
           <Typography.Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
             搜索结果：找到 {list.length} 个站点
           </Typography.Text>
-          {isMobile ? (
-            <div>
-              {list.map(site => (
-                <MobileSiteCard
-                  key={site.id}
-                  site={site}
-                  onView={(id) => {
-                    localStorage.setItem('sitesCurrentPage', currentPage)
-                    sessionStorage.setItem('sitesScrollPosition', window.scrollY.toString())
-                    sessionStorage.setItem('sitesCollapsedGroups', JSON.stringify([...collapsedGroups]))
-                    nav(`/sites/${id}`)
-                  }}
-                  onCheck={onCheck}
-                  onDebug={openDebugModal}
-                  onSetTime={openTimeModal}
-                  onEdit={openEditModal}
-                  onDelete={(s) => {
-                    Modal.confirm({
-                      title: '删除站点',
-                      content: `确定要删除站点 "${s.name}" 吗？删除后将清除所有历史检测数据，此操作不可恢复！`,
-                      okText: '确定删除',
-                      cancelText: '取消',
-                      okButtonProps: { danger: true },
-                      onOk: () => onDelete(s)
-                    })
-                  }}
-                  onToggleApiKey={toggleApiKeyVisibility}
-                  onCopyApiKey={copyApiKey}
-                  isApiKeyVisible={visibleApiKeys.has(site.id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <Table
-              rowKey="id"
-              dataSource={list}
-              columns={columns}
-              loading={loading}
-              pagination={{
-                pageSize: 10,
-                showSizeChanger: false,
-                showTotal: (total) => `共 ${total} 个站点`
-              }}
-              style={{ marginTop: 8 }}
-            />
-          )}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(500px, 1fr))',
+            gap: 12
+          }}>
+            {list.map(site => (
+              <MobileSiteCard
+                key={site.id}
+                site={site}
+                scheduleConfig={scheduleConfig}
+                isMobile={isMobile}
+                onView={(id) => {
+                  localStorage.setItem('sitesCurrentPage', currentPage)
+                  sessionStorage.setItem('sitesScrollPosition', window.scrollY.toString())
+                  sessionStorage.setItem('sitesCollapsedGroups', JSON.stringify([...collapsedGroups]))
+                  nav(`/sites/${id}`)
+                }}
+                onCheck={onCheck}
+                onDebug={openDebugModal}
+                onSetTime={openTimeModal}
+                onEdit={openEditModal}
+                onDelete={(s) => {
+                  Modal.confirm({
+                    title: '删除站点',
+                    content: `确定要删除站点 "${s.name}" 吗？删除后将清除所有历史检测数据，此操作不可恢复！`,
+                    okText: '确定删除',
+                    cancelText: '取消',
+                    okButtonProps: { danger: true },
+                    onOk: () => onDelete(s)
+                  })
+                }}
+                onToggleApiKey={toggleApiKeyVisibility}
+                onCopyApiKey={copyApiKey}
+                isApiKeyVisible={visibleApiKeys.has(site.id)}
+              />
+            ))}
+          </div>
         </>
       ) : (
         /* 按分类分组显示 */
@@ -1570,48 +1561,46 @@ export default function Sites() {
                 </Space>
               </div>
               {!collapsedGroups.has('pinned') && (
-                isMobile ? (
-                  <div style={{ padding: 12, background: 'white', borderRadius: '0 0 12px 12px' }}>
-                    {list.filter(s => s.pinned).map(site => (
-                      <MobileSiteCard
-                        key={site.id}
-                        site={site}
-                        onView={(id) => {
-                          localStorage.setItem('sitesCurrentPage', currentPage)
-                          sessionStorage.setItem('sitesScrollPosition', window.scrollY.toString())
-                          sessionStorage.setItem('sitesCollapsedGroups', JSON.stringify([...collapsedGroups]))
-                          nav(`/sites/${id}`)
-                        }}
-                        onCheck={onCheck}
-                        onDebug={openDebugModal}
-                        onSetTime={openTimeModal}
-                        onEdit={openEditModal}
-                        onDelete={(s) => {
-                          Modal.confirm({
-                            title: '删除站点',
-                            content: `确定要删除站点 "${s.name}" 吗？删除后将清除所有历史检测数据，此操作不可恢复！`,
-                            okText: '确定删除',
-                            cancelText: '取消',
-                            okButtonProps: { danger: true },
-                            onOk: () => onDelete(s)
-                          })
-                        }}
-                        onToggleApiKey={toggleApiKeyVisibility}
-                        onCopyApiKey={copyApiKey}
-                        isApiKeyVisible={visibleApiKeys.has(site.id)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <Table
-                    rowKey="id"
-                    dataSource={list.filter(s => s.pinned)}
-                    columns={columns}
-                    loading={loading}
-                    pagination={false}
-                    style={{ borderRadius: '0 0 8px 8px' }}
-                  />
-                )
+                <div style={{ 
+                  padding: 12, 
+                  background: 'white', 
+                  borderRadius: '0 0 12px 12px',
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(500px, 1fr))',
+                  gap: 12
+                }}>
+                  {list.filter(s => s.pinned).map(site => (
+                    <MobileSiteCard
+                      key={site.id}
+                      site={site}
+                      scheduleConfig={scheduleConfig}
+                      isMobile={isMobile}
+                      onView={(id) => {
+                        localStorage.setItem('sitesCurrentPage', currentPage)
+                        sessionStorage.setItem('sitesScrollPosition', window.scrollY.toString())
+                        sessionStorage.setItem('sitesCollapsedGroups', JSON.stringify([...collapsedGroups]))
+                        nav(`/sites/${id}`)
+                      }}
+                      onCheck={onCheck}
+                      onDebug={openDebugModal}
+                      onSetTime={openTimeModal}
+                      onEdit={openEditModal}
+                      onDelete={(s) => {
+                        Modal.confirm({
+                          title: '删除站点',
+                          content: `确定要删除站点 "${s.name}" 吗？删除后将清除所有历史检测数据，此操作不可恢复！`,
+                          okText: '确定删除',
+                          cancelText: '取消',
+                          okButtonProps: { danger: true },
+                          onOk: () => onDelete(s)
+                        })
+                      }}
+                      onToggleApiKey={toggleApiKeyVisibility}
+                      onCopyApiKey={copyApiKey}
+                      isApiKeyVisible={visibleApiKeys.has(site.id)}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -1738,48 +1727,46 @@ export default function Sites() {
                   </Space>
                 </div>
                 {!isCollapsed && (
-                  isMobile ? (
-                    <div style={{ padding: 12, background: 'white', borderRadius: '0 0 12px 12px' }}>
-                      {categorySites.map(site => (
-                        <MobileSiteCard
-                          key={site.id}
-                          site={site}
-                          onView={(id) => {
-                            localStorage.setItem('sitesCurrentPage', currentPage)
-                            sessionStorage.setItem('sitesScrollPosition', window.scrollY.toString())
-                            sessionStorage.setItem('sitesCollapsedGroups', JSON.stringify([...collapsedGroups]))
-                            nav(`/sites/${id}`)
-                          }}
-                          onCheck={onCheck}
-                          onDebug={openDebugModal}
-                          onSetTime={openTimeModal}
-                          onEdit={openEditModal}
-                          onDelete={(s) => {
-                            Modal.confirm({
-                              title: '删除站点',
-                              content: `确定要删除站点 "${s.name}" 吗？删除后将清除所有历史检测数据，此操作不可恢复！`,
-                              okText: '确定删除',
-                              cancelText: '取消',
-                              okButtonProps: { danger: true },
-                              onOk: () => onDelete(s)
-                            })
-                          }}
-                          onToggleApiKey={toggleApiKeyVisibility}
-                          onCopyApiKey={copyApiKey}
-                          isApiKeyVisible={visibleApiKeys.has(site.id)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <Table
-                      rowKey="id"
-                      dataSource={categorySites}
-                      columns={columns}
-                      loading={loading}
-                      pagination={false}
-                      style={{ borderRadius: '0 0 8px 8px' }}
-                    />
-                  )
+                  <div style={{ 
+                    padding: 12, 
+                    background: 'white', 
+                    borderRadius: '0 0 12px 12px',
+                    display: 'grid',
+                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(500px, 1fr))',
+                    gap: 12
+                  }}>
+                    {categorySites.map(site => (
+                      <MobileSiteCard
+                        key={site.id}
+                        site={site}
+                        scheduleConfig={scheduleConfig}
+                        isMobile={isMobile}
+                        onView={(id) => {
+                          localStorage.setItem('sitesCurrentPage', currentPage)
+                          sessionStorage.setItem('sitesScrollPosition', window.scrollY.toString())
+                          sessionStorage.setItem('sitesCollapsedGroups', JSON.stringify([...collapsedGroups]))
+                          nav(`/sites/${id}`)
+                        }}
+                        onCheck={onCheck}
+                        onDebug={openDebugModal}
+                        onSetTime={openTimeModal}
+                        onEdit={openEditModal}
+                        onDelete={(s) => {
+                          Modal.confirm({
+                            title: '删除站点',
+                            content: `确定要删除站点 "${s.name}" 吗？删除后将清除所有历史检测数据，此操作不可恢复！`,
+                            okText: '确定删除',
+                            cancelText: '取消',
+                            okButtonProps: { danger: true },
+                            onOk: () => onDelete(s)
+                          })
+                        }}
+                        onToggleApiKey={toggleApiKeyVisibility}
+                        onCopyApiKey={copyApiKey}
+                        isApiKeyVisible={visibleApiKeys.has(site.id)}
+                      />
+                    ))}
+                  </div>
                 )}
               </div>
             )
@@ -1856,48 +1843,46 @@ export default function Sites() {
                 </Space>
               </div>
               {!collapsedGroups.has('uncategorized') && (
-                isMobile ? (
-                  <div style={{ padding: 12, background: 'white', borderRadius: '0 0 12px 12px' }}>
-                    {list.filter(s => !s.categoryId && !s.pinned).map(site => (
-                      <MobileSiteCard
-                        key={site.id}
-                        site={site}
-                        onView={(id) => {
-                          localStorage.setItem('sitesCurrentPage', currentPage)
-                          sessionStorage.setItem('sitesScrollPosition', window.scrollY.toString())
-                          sessionStorage.setItem('sitesCollapsedGroups', JSON.stringify([...collapsedGroups]))
-                          nav(`/sites/${id}`)
-                        }}
-                        onCheck={onCheck}
-                        onDebug={openDebugModal}
-                        onSetTime={openTimeModal}
-                        onEdit={openEditModal}
-                        onDelete={(s) => {
-                          Modal.confirm({
-                            title: '删除站点',
-                            content: `确定要删除站点 "${s.name}" 吗？删除后将清除所有历史检测数据，此操作不可恢复！`,
-                            okText: '确定删除',
-                            cancelText: '取消',
-                            okButtonProps: { danger: true },
-                            onOk: () => onDelete(s)
-                          })
-                        }}
-                        onToggleApiKey={toggleApiKeyVisibility}
-                        onCopyApiKey={copyApiKey}
-                        isApiKeyVisible={visibleApiKeys.has(site.id)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <Table
-                    rowKey="id"
-                    dataSource={list.filter(s => !s.categoryId && !s.pinned)}
-                    columns={columns}
-                    loading={loading}
-                    pagination={false}
-                    style={{ borderRadius: '0 0 8px 8px' }}
-                  />
-                )
+                <div style={{ 
+                  padding: 12, 
+                  background: 'white', 
+                  borderRadius: '0 0 12px 12px',
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(500px, 1fr))',
+                  gap: 12
+                }}>
+                  {list.filter(s => !s.categoryId && !s.pinned).map(site => (
+                    <MobileSiteCard
+                      key={site.id}
+                      site={site}
+                      scheduleConfig={scheduleConfig}
+                      isMobile={isMobile}
+                      onView={(id) => {
+                        localStorage.setItem('sitesCurrentPage', currentPage)
+                        sessionStorage.setItem('sitesScrollPosition', window.scrollY.toString())
+                        sessionStorage.setItem('sitesCollapsedGroups', JSON.stringify([...collapsedGroups]))
+                        nav(`/sites/${id}`)
+                      }}
+                      onCheck={onCheck}
+                      onDebug={openDebugModal}
+                      onSetTime={openTimeModal}
+                      onEdit={openEditModal}
+                      onDelete={(s) => {
+                        Modal.confirm({
+                          title: '删除站点',
+                          content: `确定要删除站点 "${s.name}" 吗？删除后将清除所有历史检测数据，此操作不可恢复！`,
+                          okText: '确定删除',
+                          cancelText: '取消',
+                          okButtonProps: { danger: true },
+                          onOk: () => onDelete(s)
+                        })
+                      }}
+                      onToggleApiKey={toggleApiKeyVisibility}
+                      onCopyApiKey={copyApiKey}
+                      isApiKeyVisible={visibleApiKeys.has(site.id)}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           )}
