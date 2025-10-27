@@ -63,6 +63,7 @@ export default function Sites() {
   const [currentSite, setCurrentSite] = useState(null)
   const [tokenList, setTokenList] = useState([])
   const [loadingTokens, setLoadingTokens] = useState(false)
+  const [tokenError, setTokenError] = useState(null)
   
   // 搜索和分类相关状态
   const [searchKeyword, setSearchKeyword] = useState('')
@@ -947,6 +948,7 @@ export default function Sites() {
     setApiTokenModalOpen(true)
     setLoadingTokens(true)
     setTokenList([])
+    setTokenError(null)
     
     try {
       const res = await fetch(`/api/sites/${site.id}/tokens`, {
@@ -955,20 +957,29 @@ export default function Sites() {
       
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || '获取令牌列表失败')
+        const errorMsg = data.error || `获取令牌列表失败 (${res.status})`
+        setTokenError(errorMsg)
+        throw new Error(errorMsg)
       }
       
       const data = await res.json()
+      console.log('API令牌响应数据:', data)
+      
       // 处理不同的响应格式
       if (data.success && Array.isArray(data.data)) {
         setTokenList(data.data)
       } else if (Array.isArray(data)) {
         setTokenList(data)
+      } else if (data.data && Array.isArray(data.data)) {
+        setTokenList(data.data)
       } else {
+        console.warn('未识别的响应格式:', data)
+        setTokenError('响应格式不正确，请查看控制台了解详情')
         setTokenList([])
       }
     } catch (e) {
-      message.error(e.message || '获取令牌列表失败')
+      console.error('获取令牌列表错误:', e)
+      setTokenError(e.message || '获取令牌列表失败')
       setTokenList([])
     } finally {
       setLoadingTokens(false)
@@ -3265,6 +3276,31 @@ export default function Sites() {
                 <div style={{ textAlign: 'center', padding: '40px 0' }}>
                   <Typography.Text type="secondary">正在加载令牌列表...</Typography.Text>
                 </div>
+              ) : tokenError ? (
+                <div style={{
+                  background: '#fff2f0',
+                  border: '1px solid #ffccc7',
+                  borderRadius: 8,
+                  padding: 16
+                }}>
+                  <Typography.Text type="danger" strong style={{ display: 'block', marginBottom: 8 }}>
+                    ❌ 获取令牌失败
+                  </Typography.Text>
+                  <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+                    {tokenError}
+                  </Typography.Text>
+                  <div style={{ marginTop: 12 }}>
+                    <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+                      💡 请检查：
+                    </Typography.Text>
+                    <ul style={{ margin: '8px 0 0 20px', padding: 0, fontSize: 12, color: '#666' }}>
+                      <li>系统访问密钥是否正确</li>
+                      <li>站点地址是否可访问</li>
+                      <li>站点 API 类型是否正确</li>
+                      <li>查看浏览器控制台了解详细错误信息</li>
+                    </ul>
+                  </div>
+                </div>
               ) : tokenList.length === 0 ? (
                 <div style={{
                   background: '#fffbe6',
@@ -3273,7 +3309,7 @@ export default function Sites() {
                   padding: 16,
                   textAlign: 'center'
                 }}>
-                  <Typography.Text type="secondary">暂无令牌数据</Typography.Text>
+                  <Typography.Text type="secondary">该站点暂无 API 令牌</Typography.Text>
                 </div>
               ) : (
                 <div style={{ maxHeight: 400, overflowY: 'auto' }}>
