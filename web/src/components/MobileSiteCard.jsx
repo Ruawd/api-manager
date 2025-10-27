@@ -129,79 +129,126 @@ export default function MobileSiteCard({
       }}
       bodyStyle={{ padding: isMobile ? 12 : 14 }}
     >
-      {/* 头部：名称 */}
-      <div style={{ marginBottom: 10 }}>
-        <Space size={4} wrap style={{ marginBottom: 6 }}>
-          <Typography.Text strong style={{ fontSize: isMobile ? 14 : 15 }}>
-            {site.name}
-          </Typography.Text>
-          {site.pinned && <PushpinFilled style={{ color: '#fa8c16', fontSize: 11 }} />}
-        </Space>
+      {/* 头部：名称和URL */}
+      <Space size={4} wrap style={{ marginBottom: 4 }}>
+        <Typography.Text strong style={{ fontSize: isMobile ? 14 : 15 }}>
+          {site.name}
+        </Typography.Text>
+        {site.pinned && <PushpinFilled style={{ color: '#fa8c16', fontSize: 11 }} />}
+      </Space>
 
-        {/* URL */}
-        <Typography.Link 
-          href={site.baseUrl} 
-          target="_blank"
-          ellipsis
-          style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 8 }}
-        >
-          <GlobalOutlined style={{ marginRight: 4, fontSize: 10 }} />
-          {site.baseUrl}
-        </Typography.Link>
+      {/* URL */}
+      <Typography.Link 
+        href={site.baseUrl} 
+        target="_blank"
+        ellipsis
+        style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 6 }}
+      >
+        <GlobalOutlined style={{ marginRight: 4, fontSize: 10 }} />
+        {site.baseUrl}
+      </Typography.Link>
         
-        {/* 余额信息 */}
-        {billingStatus.detail ? (
-          <div style={{ 
-            background: billingStatus.type === 'danger' ? '#fff2f0' :
-                        billingStatus.type === 'warning' ? '#fff7e6' : '#f6ffed',
-            border: `1px solid ${billingStatus.color}`,
-            borderRadius: 6,
-            padding: '6px 8px',
-            fontSize: 10,
-            display: 'inline-block',
-            minWidth: 'fit-content'
-          }}>
-            <div style={{ display: 'flex', gap: '4px 12px', flexWrap: 'wrap', alignItems: 'baseline' }}>
-              <span style={{ color: '#888', fontSize: 10, whiteSpace: 'nowrap' }}>
-                总额 <span style={{ fontWeight: 600, fontSize: 11, color: '#333' }}>${billingStatus.detail.total}</span>
-              </span>
-              <span style={{ color: '#888', fontSize: 10, whiteSpace: 'nowrap' }}>
-                已用 <span style={{ fontWeight: 600, fontSize: 11, color: '#333' }}>${billingStatus.detail.used}</span>
-              </span>
+      {/* 余额和标签信息并排布局 */}
+      <div style={{ 
+        display: 'flex', 
+        gap: 8, 
+        alignItems: 'flex-start',
+        flexWrap: 'wrap',
+        marginBottom: 6
+      }}>
+          {/* 余额信息 */}
+          {billingStatus.detail ? (
+            <div style={{ 
+              background: billingStatus.type === 'danger' ? '#fff2f0' :
+                          billingStatus.type === 'warning' ? '#fff7e6' : '#f6ffed',
+              border: `1px solid ${billingStatus.color}`,
+              borderRadius: 6,
+              padding: '6px 8px',
+              fontSize: 10,
+              flex: '0 0 auto'
+            }}>
+              <div style={{ display: 'flex', gap: '4px 12px', flexWrap: 'wrap', alignItems: 'baseline' }}>
+                <span style={{ color: '#888', fontSize: 10, whiteSpace: 'nowrap' }}>
+                  总额 <span style={{ fontWeight: 600, fontSize: 11, color: '#333' }}>${billingStatus.detail.total}</span>
+                </span>
+                <span style={{ color: '#888', fontSize: 10, whiteSpace: 'nowrap' }}>
+                  已用 <span style={{ fontWeight: 600, fontSize: 11, color: '#333' }}>${billingStatus.detail.used}</span>
+                </span>
+              </div>
+              <div style={{ marginTop: 4, display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <span style={{ color: '#888', fontSize: 10 }}>剩余</span>
+                <span style={{ fontWeight: 700, color: billingStatus.color, fontSize: 14 }}>
+                  ${billingStatus.detail.remaining}
+                </span>
+                <span style={{ color: billingStatus.color, fontSize: 10, fontWeight: 600 }}>
+                  ({billingStatus.detail.percentage}%)
+                </span>
+              </div>
             </div>
-            <div style={{ marginTop: 4, display: 'flex', alignItems: 'baseline', gap: 4 }}>
-              <span style={{ color: '#888', fontSize: 10 }}>剩余</span>
-              <span style={{ fontWeight: 700, color: billingStatus.color, fontSize: 14 }}>
-                ${billingStatus.detail.remaining}
-              </span>
-              <span style={{ color: billingStatus.color, fontSize: 10, fontWeight: 600 }}>
-                ({billingStatus.detail.percentage}%)
-              </span>
-            </div>
+          ) : (
+            <Tag 
+              color={billingStatus.color}
+              style={{ 
+                margin: 0,
+                fontSize: 11,
+                fontWeight: 600,
+                padding: '3px 8px',
+                borderRadius: 6,
+                alignSelf: 'flex-start'
+              }}
+            >
+              {billingStatus.text}
+            </Tag>
+          )}
+
+          {/* 标签信息 */}
+          <div style={{ flex: '1 1 auto', display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
+            <Tag color="blue" style={{ fontSize: 10, margin: 0, padding: '1px 6px' }}>
+              {site.apiType === 'newapi' ? 'NewAPI' : 
+               site.apiType === 'veloera' ? 'Veloera' :
+               site.apiType === 'donehub' ? 'DoneHub' :
+               site.apiType === 'voapi' ? 'VOAPI' : '其他'}
+            </Tag>
+            
+            {site.enableCheckIn && (
+              <Tag 
+                color={site.checkInSuccess === true ? 'success' : 
+                       site.checkInSuccess === false ? 'error' : 'warning'}
+                style={{ fontSize: 10, margin: 0, padding: '1px 6px' }}
+              >
+                {site.checkInSuccess === true ? '✓' :
+                 site.checkInSuccess === false ? '✗' : '○'}
+                签到
+              </Tag>
+            )}
+            
+            {/* 定时计划 */}
+            {scheduleDisplay.type && (
+              <Tag color={scheduleDisplay.color} style={{ fontSize: 10, margin: 0, padding: '1px 6px' }}>
+                ⏰ {scheduleDisplay.type} {scheduleDisplay.text}
+              </Tag>
+            )}
+            
+            {site.lastCheckedAt && (
+              <Tag color="default" style={{ fontSize: 9, margin: 0, padding: '1px 6px' }}>
+                {new Date(site.lastCheckedAt).toLocaleString('zh-CN', { 
+                  month: '2-digit', 
+                  day: '2-digit', 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}
+              </Tag>
+            )}
           </div>
-        ) : (
-          <Tag 
-            color={billingStatus.color}
-            style={{ 
-              margin: 0,
-              fontSize: 11,
-              fontWeight: 600,
-              padding: '3px 8px',
-              borderRadius: 6
-            }}
-          >
-            {billingStatus.text}
-          </Tag>
-        )}
       </div>
 
       {/* API密钥 */}
       {site.apiKey && (
         <div style={{ 
           background: '#f7f7f7', 
-          padding: '6px 8px', 
+          padding: '5px 6px', 
           borderRadius: 6, 
-          marginBottom: 8 
+          marginBottom: 6 
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography.Text 
@@ -236,47 +283,7 @@ export default function MobileSiteCard({
         </div>
       )}
 
-      {/* 标签信息 */}
-      <Space size={3} wrap style={{ marginBottom: 8 }}>
-        <Tag color="blue" style={{ fontSize: 10, margin: 0, padding: '1px 6px' }}>
-          {site.apiType === 'newapi' ? 'NewAPI' : 
-           site.apiType === 'veloera' ? 'Veloera' :
-           site.apiType === 'donehub' ? 'DoneHub' :
-           site.apiType === 'voapi' ? 'VOAPI' : '其他'}
-        </Tag>
-        
-        {site.enableCheckIn && (
-          <Tag 
-            color={site.checkInSuccess === true ? 'success' : 
-                   site.checkInSuccess === false ? 'error' : 'warning'}
-            style={{ fontSize: 10, margin: 0, padding: '1px 6px' }}
-          >
-            {site.checkInSuccess === true ? '✓' :
-             site.checkInSuccess === false ? '✗' : '○'}
-            签到
-          </Tag>
-        )}
-        
-        {/* 定时计划 */}
-        {scheduleDisplay.type && (
-          <Tag color={scheduleDisplay.color} style={{ fontSize: 10, margin: 0, padding: '1px 6px' }}>
-            ⏰ {scheduleDisplay.type} {scheduleDisplay.text}
-          </Tag>
-        )}
-        
-        {site.lastCheckedAt && (
-          <Tag color="default" style={{ fontSize: 9, margin: 0, padding: '1px 6px' }}>
-            {new Date(site.lastCheckedAt).toLocaleString('zh-CN', { 
-              month: '2-digit', 
-              day: '2-digit', 
-              hour: '2-digit', 
-              minute: '2-digit' 
-            })}
-          </Tag>
-        )}
-      </Space>
-
-      <Divider style={{ margin: '8px 0' }} />
+      <Divider style={{ margin: '6px 0' }} />
 
       {/* 操作按钮 */}
       <div style={{ 
